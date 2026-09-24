@@ -4,14 +4,14 @@ Interactive Swiss Stage simulator for **EMEA Masters Summer 2026**. Pick winners
 
 Round 1 is locked to the official Pool 0-0 pairings (seeds #1–#16 vs #17–#32).
 
-## Format
+## How it works
 
-- 32 teams, up to 7 rounds
-- 4 wins → advance · 4 losses → eliminated
-- Pairings: FIDE Dutch within score groups (top half vs bottom half by seed/rating, rematch avoidance)
-- Advancement seeding for identical records:
-  1. **Progressive Score** (R1 win = 7 … R7 win = 1)
-  2. Initial Swiss seed
+1. Round 1 is locked to the official Pool 0-0 pairings.
+2. Click a team on each match card to set the winner (green = win).
+3. When **every** match in a round has a result, the next round is paired with FIDE Dutch and appears as the next column.
+4. The **Final Result** column lists teams that reach 4 wins (advanced) or 4 losses (eliminated), ordered by Progressive Score then Swiss seed.
+
+Layout mirrors majors.im-style Swiss boards: horizontal round columns, score-group pools (`1-0`, `0-1`, …), Bo1/Bo3 labels on pool headers.
 
 ## Run locally
 

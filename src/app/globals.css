@@ -49,41 +49,41 @@
 
 :root {
   --ink: #0b1220;
-  --gold: #e8c547;
-  --mist: #9db0c9;
-  --panel: #142033;
+  --gold: #c5a035;
+  --mist: #8b97ab;
+  --panel: #151b27;
   --background: #0b1220;
-  --foreground: #f4f7fb;
-  --card: #142033;
-  --card-foreground: #f4f7fb;
-  --popover: #142033;
-  --popover-foreground: #f4f7fb;
-  --primary: #e8c547;
+  --foreground: #e8edf5;
+  --card: #151b27;
+  --card-foreground: #e8edf5;
+  --popover: #151b27;
+  --popover-foreground: #e8edf5;
+  --primary: #2ecc71;
   --primary-foreground: #0b1220;
-  --secondary: #1b2a40;
-  --secondary-foreground: #f4f7fb;
-  --muted: #1b2a40;
-  --muted-foreground: #9db0c9;
-  --accent: #1e3a5f;
-  --accent-foreground: #f4f7fb;
+  --secondary: #1a2230;
+  --secondary-foreground: #e8edf5;
+  --muted: #1a2230;
+  --muted-foreground: #8b97ab;
+  --accent: #222b3c;
+  --accent-foreground: #e8edf5;
   --destructive: oklch(0.65 0.2 25);
-  --border: rgb(255 255 255 / 12%);
-  --input: rgb(255 255 255 / 14%);
-  --ring: #e8c547;
-  --chart-1: #e8c547;
-  --chart-2: #38bdf8;
-  --chart-3: #9db0c9;
+  --border: #2a3344;
+  --input: #2a3344;
+  --ring: #2ecc71;
+  --chart-1: #2ecc71;
+  --chart-2: #c5a035;
+  --chart-3: #8b97ab;
   --chart-4: #64748b;
   --chart-5: #334155;
-  --radius: 0.55rem;
-  --sidebar: #102033;
-  --sidebar-foreground: #f4f7fb;
-  --sidebar-primary: #e8c547;
+  --radius: 0.45rem;
+  --sidebar: #121823;
+  --sidebar-foreground: #e8edf5;
+  --sidebar-primary: #2ecc71;
   --sidebar-primary-foreground: #0b1220;
-  --sidebar-accent: #1b2a40;
-  --sidebar-accent-foreground: #f4f7fb;
-  --sidebar-border: rgb(255 255 255 / 12%);
-  --sidebar-ring: #e8c547;
+  --sidebar-accent: #1a2230;
+  --sidebar-accent-foreground: #e8edf5;
+  --sidebar-border: #2a3344;
+  --sidebar-ring: #2ecc71;
 }
 
 @layer base {
@@ -92,10 +92,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: #0b1220;
     background-image:
-      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(232, 197, 71, 0.12), transparent),
-      radial-gradient(ellipse 60% 40% at 90% 0%, rgba(56, 189, 248, 0.1), transparent),
-      linear-gradient(180deg, #0f1a2c 0%, #0b1220 40%, #080e18 100%);
+      radial-gradient(ellipse 70% 40% at 0% 0%, rgba(46, 204, 113, 0.06), transparent),
+      radial-gradient(ellipse 50% 35% at 100% 0%, rgba(197, 160, 53, 0.07), transparent);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -107,27 +107,14 @@
 @keyframes round-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateX(12px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pick-flash {
-  from {
-    box-shadow: 0 0 0 0 rgba(232, 197, 71, 0.55);
-  }
-  to {
-    box-shadow: 0 0 0 0 rgba(232, 197, 71, 0);
+    transform: translateX(0);
   }
 }
 
 .round-enter {
-  animation: round-in 0.45s ease-out both;
-}
-
-.match-card:has(button:focus-visible) {
-  animation: pick-flash 0.6s ease-out;
+  animation: round-in 0.35s ease-out both;
 }

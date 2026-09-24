@@ -3,50 +3,75 @@
 import { TEAM_BY_ID } from "@/data/teams";
 import { cn } from "@/lib/utils";
 import type { MatchResult, Matchup } from "@/lib/swiss";
+import { seriesFormat } from "@/lib/brackets";
 
 type MatchCardProps = {
   match: Matchup;
   result?: MatchResult;
+  progressiveA?: number;
+  progressiveB?: number;
   onPick: (winnerId: string) => void;
   onClear: () => void;
 };
 
-export function MatchCard({ match, result, onPick, onClear }: MatchCardProps) {
+export function MatchCard({
+  match,
+  result,
+  progressiveA,
+  progressiveB,
+  onPick,
+  onClear,
+}: MatchCardProps) {
   const teamA = TEAM_BY_ID[match.teamA];
   const teamB = TEAM_BY_ID[match.teamB];
   const winner = result?.winnerId;
+  const format = seriesFormat(match.pool);
+  const decided = !!winner;
 
   return (
     <div
       className={cn(
-        "match-card group relative grid grid-cols-[1fr_auto_1fr] items-stretch gap-1 rounded-md border border-white/10 bg-[color-mix(in_oklab,var(--ink)_88%,black)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition duration-200",
-        winner && "border-[var(--gold)]/35",
+        "overflow-hidden rounded-md border border-[#2a3344] bg-[#151b27] text-[13px] shadow-sm transition",
+        decided && "border-[#3d4a5c]",
       )}
     >
-      <TeamButton
+      <TeamRow
         seed={teamA.seed}
-        name={teamA.name}
-        short={teamA.short}
+        name={teamA.short}
+        fullName={teamA.name}
         selected={winner === teamA.id}
         lost={!!winner && winner !== teamA.id}
-        align="left"
+        progressive={progressiveA}
+        score={
+          decided
+            ? winner === teamA.id
+              ? format === "Bo3"
+                ? "2"
+                : "1"
+              : "0"
+            : "–"
+        }
         onClick={() =>
           winner === teamA.id ? onClear() : onPick(teamA.id)
         }
       />
-      <div className="flex flex-col items-center justify-center px-1 text-[10px] font-medium tracking-[0.18em] text-[var(--mist)] uppercase">
-        <span>VS</span>
-        <span className="mt-0.5 text-[9px] tracking-normal text-white/35 normal-case">
-          {match.label}
-        </span>
-      </div>
-      <TeamButton
+      <div className="h-px bg-[#2a3344]" />
+      <TeamRow
         seed={teamB.seed}
-        name={teamB.name}
-        short={teamB.short}
+        name={teamB.short}
+        fullName={teamB.name}
         selected={winner === teamB.id}
         lost={!!winner && winner !== teamB.id}
-        align="right"
+        progressive={progressiveB}
+        score={
+          decided
+            ? winner === teamB.id
+              ? format === "Bo3"
+                ? "2"
+                : "1"
+              : "0"
+            : "–"
+        }
         onClick={() =>
           winner === teamB.id ? onClear() : onPick(teamB.id)
         }
@@ -55,49 +80,63 @@ export function MatchCard({ match, result, onPick, onClear }: MatchCardProps) {
   );
 }
 
-function TeamButton({
+function TeamRow({
   seed,
   name,
-  short,
+  fullName,
   selected,
   lost,
-  align,
+  progressive,
+  score,
   onClick,
 }: {
   seed: number;
   name: string;
-  short: string;
+  fullName: string;
   selected: boolean;
   lost: boolean;
-  align: "left" | "right";
+  progressive?: number;
+  score: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      title={fullName}
       onClick={onClick}
       className={cn(
-        "flex min-h-14 flex-col justify-center rounded-sm px-2.5 py-2 text-left transition duration-150",
-        align === "right" && "items-end text-right",
-        selected &&
-          "bg-[var(--gold)] text-[var(--ink)] shadow-[0_0_0_1px_rgba(232,197,71,0.45)]",
-        !selected && !lost && "hover:bg-white/6 text-white",
-        lost && "bg-transparent text-white/35 line-through decoration-white/25",
+        "grid w-full grid-cols-[18px_1fr_auto_28px] items-center gap-1.5 px-2 py-1.5 text-left transition",
+        selected && "bg-[#2ecc71] text-[#0b1220]",
+        !selected && !lost && "bg-[#1a2230] text-white hover:bg-[#222b3c]",
+        lost && "bg-[#121823] text-[#7a8699]",
       )}
     >
       <span
         className={cn(
-          "font-[family-name:var(--font-display)] text-[11px] tracking-[0.14em] uppercase",
-          selected ? "text-[var(--ink)]/70" : "text-[var(--mist)]",
+          "text-[10px] font-semibold tabular-nums",
+          selected ? "text-[#0b1220]/70" : "text-[#8b97ab]",
         )}
       >
-        #{seed}
+        {seed}
       </span>
-      <span className="font-[family-name:var(--font-display)] text-sm leading-tight tracking-wide sm:hidden">
-        {short}
-      </span>
-      <span className="hidden font-[family-name:var(--font-display)] text-sm leading-tight tracking-wide sm:inline">
+      <span className="truncate font-semibold tracking-wide uppercase">
         {name}
+      </span>
+      <span
+        className={cn(
+          "text-[10px] tabular-nums",
+          selected ? "text-[#0b1220]/70" : "text-[#6b778c]",
+        )}
+      >
+        {progressive != null && progressive > 0 ? `+${progressive}` : ""}
+      </span>
+      <span
+        className={cn(
+          "text-center text-sm font-bold tabular-nums",
+          selected ? "text-[#0b1220]" : "text-[#c5cedd]",
+        )}
+      >
+        {score}
       </span>
     </button>
   );
