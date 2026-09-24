@@ -1,0 +1,147 @@
+Swiss-system tournament - Wikipedia
+
+# Swiss-system tournament
+
+ A Swiss-system tournament is a competition format in which contestants are paired using rules designed to ensure that each competitor plays opponents with a similar running score without playing the same opponent more than once. Match pairing for each round is done after the previous round has ended and depends on its results. The winner is the competitor with the highest aggregate points earned in all rounds. With an even number of participants, all competitors play in each round. It contrasts with an elimination tournament, where not all participants play in later rounds, as well as with round-robin tournaments, where each competitor plays every possible opponent.
+
+The Swiss system is used for competitions in which it is undesirable to eliminate any competitors before the end of the tournament, but which have too many entrants to make a full round-robin (all-play-all) feasible. [1] In contrast, all-play-all is suitable if there are a small number of competitors. The Swiss system seeks to provide a clear winner among a large number of competitors within a relatively small number of rounds of competition, while avoiding the situation in single-elimination (knockout) tournaments in which a single bad result can remove a good competitor.
+
+The system was first employed at a chess tournament in Zürich in 1895 by Julius Müller, [2] hence the name "Swiss system", [1] and is now used in many games including bridge, chess, [1] and Go, [3] among others.
+
+## Procedure
+
+The number of rounds is fixed in advance. During all but the first round, competitors are paired based on approximately how they have performed so far. After the last round, players are ranked by their score. If players remain tied, a tie-break score is used, such as the sum of all opponents' scores (Buchholz system).
+
+In the first round, competitors are paired either randomly or according to some pattern that has been found to serve a given game or sport well. If it is desired for top-ranked participants to meet in the last rounds, the pattern must start them in different brackets, just the same as is done in seeding of pre-ranked players for a single elimination tournament. In subsequent rounds, competitors are sorted according to their cumulative scores and are assigned opponents with the same or similar score up to that point. The pairing rules have to be quite complicated, as they have to ensure that no two players ever face each other twice, and to avoid giving a player some advantage as a result of chance.
+
+The detailed pairing rules are different in different variations of the Swiss system. As they are quite complicated, and it is undesirable to have a long delay between rounds to decide the pairings, the tournament organizer often uses a computer program to do the pairing.
+
+In chess, a specific pairing rule, called "Dutch system" by FIDE, is often implied when the term "Swiss" is used. The Monrad system for pairing is commonly used in chess in Denmark and Norway, as well as in other sports worldwide. These two systems are outlined below.
+
+### Dutch system
+
+The players are divided into groups based on their scores. Within each group with the same or similar score, players are ranked based on ratings or some other criteria. Subject to the other pairing rules, the top half is then paired with the bottom half. For instance, if there are eight players in a score group, number 1 is paired with number 5, number 2 is paired with number 6 and so on. Modifications are then made to prevent competitors from meeting each other twice, and to balance colors (in chess). [4] For this method to work, the score groups cannot be too small, and thus for smaller overall fields score groups are not a suitable approach.
+
+This pairing system may have some issues with competitive integrity if a tournament where this system is used has qualifiers leading to it. For example, suppose a certain qualifier determines the 5th-8th seeds in an 8-team Swiss-style tournament. If the Dutch system is used, players or teams in the qualifier may be incentivized to not do their best, as doing so might make them play against the 1st seed on the first round, decreasing their chances of having a good score. Conversely, for knockout tournaments, the highest seed is usually paired with the lowest, the 2nd highest with the 2nd lowest, and so on. This incentivizes players or teams to do their best and get a higher seed so that they can play against lower-seeded players/teams.
+
+### Monrad system
+
+The players are first ranked based on their scores, then on their starting numbers (which can be random or based on seeding). Then #1 meets #2, #3 meets #4, etc., with modifications made to ensure that other rules are adhered to. Players are sorted by scores (not score groups) and original ranks, then each player is paired to the next opponent, typically excluding repeats.
+
+The Monrad system used in chess in Denmark is quite simple, with players initially ranked at random, and pairings modified only to avoid players meeting each other twice. [5] The Norwegian system has an optional seeding system for the first-round pairings, and within a score group, the pairing algorithm endeavors to give players alternating colors. [6] 
+
+### Burstein system
+
+Like in the Dutch system, the players are divided into groups based on their scores. Within each scoregroup, players are sorted based on rating and tiebreaks. Then, the first-ranked player is paired against the last-ranked player in the scoregroup, the second-ranked to the second-to-last-ranked and so on. In a scoregroup with six players player 1 would be paired with player 6, player 2 with player 5 and player 3 with player 4. 
+
+## Analysis, advantages, and disadvantages
+
+Assuming no drawn games and byes treated as wins, determining a clear winner (and, incidentally, a clear loser) would require the same number of rounds as that of a knockout tournament, which is the binary logarithm of the number of players rounded up. Thus, three rounds can handle up to eight players, four rounds can handle up to sixteen players, and so on. If this minimum number of rounds is not played, two or more players will always finish the tournament with a perfect score, never having faced each other. Likewise, if extra rounds are played, two or more players could finish the tournament with the same score, assuming no player received a perfect score. Due to the fact that players should meet each other at most once and pairings are chosen dependent on the results, there is a natural upper bound on the number of rounds of a Swiss-system tournament, which is equal to half of the number of players rounded up. [7] Should more than this number of rounds be played, the tournament might run into the situation that there is either no feasible round, or some players have to play each other a second time.
+
+Unlike in a knockout tournament, a player who enters a Swiss-system tournament knows that they can play in all the rounds, regardless of results. The only exception is that one player is left over when there is an odd number of players. The player left over receives a bye: they do not play that round but are usually awarded the same number of points as for winning a game (ex: one point for a chess tournament). The player is reintroduced in the next round and will not receive another bye. Another advantage is that the final ranking in a Swiss-system tournament gives some indication of the relative strengths of all contestants, not just of the tournament winner. By contrast, in a knockout tournament, the second-best contestant could have been eliminated by the eventual tournament winner in an early round and thus appear weak.
+
+In a Swiss-system tournament, sometimes a player has such a lead that by the last round they are assured of winning the tournament even if they lose the last game. This has some disadvantages. First, a Swiss-system tournament does not always end with the climax of a knockout final. Second, while the outcome of the final game does not determine first place, the first-place player's final game can determine who will be second or third. In the 1995 All-Stars Tournament in Scrabble, tournament directors paired David Gibson, who had by then clinched first place, with the highest-ranked player who could not win a prize; this allowed the second- and third-ranked players to compete between themselves for their final placements. The "Gibson Rule" is optional at Scrabble tournaments, as players at smaller tournaments may still have an incentive to win their last game to improve their overall rating. Players may also be "Gibsonized" at an earlier stage of a tournament; a player who has clinched a spot in the next round may be paired with the highest-ranked player who cannot possibly qualify for the next round. [8] 
+
+The Swiss system is used for the selection of the English national pool team. [9] Sixty-four players start the tournament and after six rounds, the top player will qualify as they will be unbeaten. The remaining seven places are decided after a series of round robins and playoffs.
+
+Compared with a round-robin tournament, a Swiss tournament can handle many players without requiring an impractical number of rounds. For example, if a tennis tournament had sixty-four players, but only eight courts available, then not all matches in a round can be played at the same time. In a Swiss tournament, each round would have to be divided up into four waves of eight matches each. This would result in a total of twenty-four waves over the minimum six rounds. A single-elimination (knockout) tournament also does not require an impractical number of rounds, but the best competitor might perform poorly in a single match and be eliminated early. Continuing the example, for such a tournament, the first round would require four waves, the next two, and all remaining rounds would consist of a single wave each. Over the same six rounds, only nine waves would occur. Note that the waves format is not strictly necessary, as instead a match could commence as soon as another in the same round ends, but the principle is largely the same.
+
+In a Swiss tournament, it is necessary to have all the results of a particular round recorded before allowing the next round to begin. This means that each round will take at least as long as its slowest match. In a single elimination tournament, any game may commence once the two preceding games that feed into it have been completed. This may result in one branch of a single-elimination bracket falling behind if it has several slow matches in a row, but it may catch up if it then has several quick matches.
+
+### Accelerated pairings
+
+The method of accelerated pairings also known as accelerated Swiss [10] is used in some large tournaments with more than the optimal number of players for the number of rounds. This method pairs top players more quickly than the standard method in the opening rounds [10] and has the effect of reducing the number of players with perfect scores more rapidly (by approximately a factor of 2 after two rounds), although this is not guaranteed. [11] 
+
+For the first two rounds, players who started in the top half have one point added to their score for pairing purposes only. Then the first two rounds are paired normally, taking this added score into account. In effect, in the first round the top quarter plays the second quarter and the third quarter plays the fourth quarter. Most of the players in the first and third quarters should win the first round. Assuming this is approximately the case, in effect for the second round the top eighth plays the second eighth, the second quarter plays the third quarter and the seventh eighth plays the bottom eighth. That is, in the second round, winners in the top half play each other, losers in the bottom half play each other, and losers in the top half are in a pool with winners in the bottom half. After two rounds, about 1⁄ 8 of the players will have a perfect score, instead of 1⁄ 4. After the second round, the standard pairing method is used (without the added point for the players who started in the top half).
+
+As a comparison between the standard Swiss system and the accelerated pairings, consider a tournament with eight players, ranked #1 through #8. Assume that the higher-ranked player always wins. Note that in round 2, if #5 and #6 instead score upset wins against #3 and #4, there would be three players with a perfect 2–0 score instead of only one or two, as desired.
+
+| Standard Swiss system | Accelerated pairings |
+| --- | --- |
+| Round 1 | |
+| #1 plays #5, #1 wins #2 plays #6, #2 wins #3 plays #7, #3 wins #4 plays #8, #4 wins | #1 plays #3, #1 wins #2 plays #4, #2 wins #5 plays #7, #5 wins #6 plays #8, #6 wins |
+| Round 2 | |
+| #1 plays #3, #1 wins #2 plays #4, #2 wins #5 plays #7, #5 wins #6 plays #8, #6 wins | #1 plays #2, #1 wins #3 plays #5, #3 wins #4 plays #6, #4 wins #7 plays #8, #7 wins |
+| After two rounds, the standings are: | |
+| 1: 2-0 2: 2-0 3: 1-1 4: 1-1 5: 1-1 6: 1-1 7: 0-2 8: 0-2 | 1: 2-0 2: 1-1 3: 1-1 4: 1-1 5: 1-1 6: 1-1 7: 1-1 8: 0-2 |
+
+### Danish system
+
+The Danish system works in principle like a Monrad system, only without the restriction that no players can meet for a second time, so it is always #1 vs. #2, #3 vs. #4 etc.
+
+Bridge team tournaments, if not played as "Round Robin", usually start with the Swiss system to make sure that the same teams would not play against each other frequently, but in the last one or two rounds there may be a switch to the Danish system, especially to allow the first two ranked teams to battle against each other for the victory, even if they have met before during the tournament. This would be more common if relatively few teams are involved. In a large field it is usually easy to match high-scoring teams who have not previously met.
+
+### Grand Prix system
+
+In a few tournaments which run over a long period of time, such as a tournament with one round every week for three months, the Grand Prix system can be used. A player's final score is based on their best results (e.g. best ten results out of the twelve rounds). Players are not required to play in every round; they may enter or drop out of the tournament at any time. Indeed, they may decide to play only one game if they wish to, although once a player wants to get a prize they need to play more rounds to accumulate points. The tournament therefore includes players who want to go for a prize and play several rounds as well as players who only want to play an odd game. [12] 
+
+### McMahon system
+
+A variant known as the McMahon system tournament is the established way in which European Go tournaments are run. Professional sumo tournaments in Japan also closely approximate this system. This differs mainly in that players have a skill ranking prior to the start of the tournament which determines their initial pairing in contrast to the basic Swiss-system approach where all players start at the same skill ranking. The McMahon system reduces the probability of a very strong team meeting a very weak team in the initial rounds. It is named for Lee E. McMahon (1931– 1989) of Bell Labs.
+
+### Amalfi system
+
+A tournament system in Italy. It is similar to the Swiss System, but does not split players based on their score. Before pairing any round, players are listed for decreasing score / decreasing rating, and the opponent of the first player in the list is the player following them by a number of positions equal to the number of remaining rounds, and so on for the other players. As consequence of this, the difference in rating between opponents at the first round is not so big (as for the accelerated systems), and ideally the "big match" between the first and the second one should occur at the last round, no matter how many players and rounds are in the tournament.
+
+### Keizer system
+
+A bit like the Amalfi system, the Keizer system aims to offer a more interesting pairing system than the Swiss or round-robin system for tournaments that take place over a long period, for example an internal club championship with a game every week for several weeks. The advantages of the Keizer system are that all players do not have to be present for every round of the tournament: they can enter, leave and re-enter the tournament very easily. The Keizer system also maximizes the interest of the games by seeking to pairing opponents of similar playing strength. This system is quite used in chess clubs in Belgium, but especially in the Netherlands. [13] 
+
+### Chess
+
+In chess, each player is paired against another player with an equivalent performance score. In Round 1 of a chess tournament paired using the Swiss System, players usually are seeded according to their known playing strength, often a rating assigned to them by their local club, their national federation, or the world chess federation (FIDE). In some events, especially when none or few of the players have an official chess rating, the players are paired randomly. Once play begins, players who win receive a point, those who draw receive one-half of a point, and those who lose receive no points. Win, lose or draw, all players proceed to the next round where winners are paired against opponents with equal performance scores (e.g. Round 1's winners play each other, Round 1's draws play each other, etc.). In later rounds (typical tournaments have anywhere from 3-9 rounds), players face opponents with the same (or almost the same) score. No player is paired up against the same opponent twice.
+
+The rules for Swiss System chess events also try to ensure that each player plays an equal number of games with white and black. Alternating colors in each round is the most preferable and the same color is never repeated three times in a row.
+
+Players with the same score are ideally ranked according to rating. Then the top half is paired with the bottom half. For instance, if there are eight players in a score group, number 1 is paired to play number 5, number 2 is paired to play number 6 and so on. When the tournament, or a section of the tournament, has an odd number of players, one player usually is assigned a "Bye"—e.g. a round where the player is not paired. Modifications are then made to balance colors and prevent players from meeting each other twice. [1] 
+
+The first national event in the United States to use the Swiss system was in Corpus Christi, Texas in 1945; and the first Chess Olympiad using it was held in Haifa in 1976. [14] 
+
+In chess, the terms Swiss and Monrad are both used and denote systems with different pairing algorithms. The Monrad pairing system is commonly used in Denmark and Norway, while most of the rest of the world uses one of the Swiss systems defined by FIDE. In most other sports, only one format is used and is known either as Monrad or Swiss.
+
+### Esports
+
+A variation of Swiss system common in esports tournaments sees participants play until reaching the preset number of wins or losses, instead of having everyone play the same number of games. In this system, a player or team that wins the required number of games advances to the next stage of the tournament and doesn't play any more games in this stage; conversely, those who lose enough games are eliminated from the tournament. This system was used for the first time in Counter-Strike: Global Offensive by ESL during qualifying rounds for the ESL One Cologne 2016 tournament. [15] [non-primary source needed] The Buchholz System was introduced in these Major Championships since PGL Major Stockholm 2021. [16] [non-primary source needed] 
+
+### Go
+
+Relatively few Go tournaments use the Swiss system. Most amateur Go tournaments, at least in Europe and America, now use the McMahon system instead. Swiss-system tournaments must start with very unequal matches in the early rounds—"slaughter pairing" is the name of one initial pattern used—if the Swiss pairing rules applied subsequently are to allow the top players to meet in the latest rounds. The McMahon system is designed to give all players games against similarly skilled players all along, and to produce final standings that more accurately reflect the true current skill levels of players. [3] [17] 
+
+Other tournament systems
+
+- Round-robin tournament
+- Single-elimination tournament
+- Double-elimination tournament
+- Scheveningen system
+
+## References
+
+1. 1 2 3 4"What is the Swiss System?". Chess.about.com. 13 November 2013. Retrieved 9 December 2013.
+2. ↑"125 years Swiss System". en.ChessBase.com. 17 June 2020. Retrieved 14 August 2021.
+3. 1 2"Swiss Pairing". Sensei's Library.
+4. ↑"Swiss System vs Round Robin". SciChess.org. Archived from the original on 18 November 2013. Retrieved 9 December 2013.
+5. ↑ Regulations for Monrad system as used in Denmark Archived 27 September 2007 at the Wayback Machine (See section 4.10.1) (in Danish)
+6. ↑ Regulations for Monrad system as used in Norway Archived 6 July 2007 at the Wayback Machine
+7. ↑ Schmand, Daniel; Schröder, Marc; Vargas Koch, Laura (2020). "A Greedy Algorithm for the Social Golfer and the Oberwolfach Problem". arXiv: 2007.10704 [cs.DM].
+8. ↑ NASPA Director Manual (PDF). Dallas, Texas: North American Word Game Players Association. 2013. p. 54. Archived (PDF) from the original on 6 April 2015.
+9. ↑"England Trials - 2016". EPA.org.uk. English Pool Association. 2016. Retrieved 6 April 2016.
+10. 1 2
+
+Barden, Leonard (1980). Play Better Chess. Octopus Books. p. 150. ISBN 
+
+0-7064-0967-1
+
+.
+11. ↑
+
+Just, Tim; Burg, Daniel (2003). U.S. Chess Federation's Official Rules of Chess. McKay. pp. 130– 131. ISBN 
+
+0-8129-3559-4
+
+.
+12. ↑"NASCAR Cup Series News, Videos, Race Results, Standings & Stats". FOX Sports. Retrieved 7 November 2024.
+13. ↑"The Keizer-System for Club Tournaments". 13 December 2022.
+14. ↑"22nd Chess Olympiad, Haifa 1976, information". OlimpBase.org. Retrieved 6 April 2016.
+15. ↑"ESL One Cologne 2016". ESL One. Retrieved 1 June 2016.
+16. ↑"The Buchholz system will replace the tie-breaker system during the Challengers and Legends stages". Press.PGLEsports.com. 24 October 2021. Retrieved 8 August 2023.
+17. ↑"Sonneborn Berger". Senseis.XMP.net.
