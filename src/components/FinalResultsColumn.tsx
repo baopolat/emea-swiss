@@ -37,30 +37,30 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
   ];
 
   return (
-    <div className="flex w-[220px] shrink-0 flex-col gap-3">
-      <div className="sticky top-0 z-10 border-b border-[#2a3344] bg-[#0b1220]/95 px-1 pb-2 backdrop-blur">
-        <h2 className="text-sm font-bold tracking-wide text-white uppercase">
+    <div className="flex w-[240px] shrink-0 flex-col gap-3">
+      <div className="sticky top-[61px] z-10 rounded-lg border border-[#243044] bg-[#101722]/95 px-3 py-2.5 backdrop-blur">
+        <h2 className="text-[13px] font-bold tracking-[0.14em] text-white uppercase">
           Final Result
         </h2>
-        <p className="text-[10px] text-[#8b97ab]">
+        <p className="mt-1 text-[10px] text-[#7a879c]">
           Prog score · then Swiss seed
         </p>
       </div>
 
       {finished.length === 0 ? (
-        <p className="px-1 text-xs text-[#6b778c]">
-          Teams appear here at 4 wins or 4 losses.
-        </p>
+        <div className="rounded-lg border border-dashed border-[#2c3548] px-3 py-6 text-center text-xs text-[#5c6b82]">
+          Teams land here at 4 wins or 4 losses.
+        </div>
       ) : (
         orderedKeys.map((key) => {
           const items = groups.get(key) ?? [];
           const isAdvance = items[0]?.status === "advanced";
           return (
-            <div key={key} className="flex flex-col gap-1">
+            <div key={key} className="flex flex-col gap-1.5">
               <div
                 className={cn(
-                  "px-1 text-[11px] font-semibold tracking-wide uppercase",
-                  isAdvance ? "text-[#2ecc71]" : "text-[#e74c3c]",
+                  "px-1 text-[11px] font-bold tracking-[0.14em] uppercase",
+                  isAdvance ? "text-[#2ecc71]" : "text-[#ef4444]",
                 )}
               >
                 {key}
@@ -69,25 +69,33 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
                 <div
                   key={s.team.id}
                   className={cn(
-                    "grid grid-cols-[20px_1fr_auto] items-center gap-1 rounded-md border px-2 py-1.5 text-[12px]",
+                    "grid grid-cols-[22px_28px_minmax(0,1fr)_auto] items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[12px]",
                     isAdvance
-                      ? "border-[#2ecc71]/35 bg-[#143528] text-[#d8ffe8]"
-                      : "border-[#3a2228] bg-[#1a1216] text-[#c9b4b8]",
+                      ? "border-[#2ecc71]/30 bg-[#10291d] text-[#d8ffe8]"
+                      : "border-[#3f242a] bg-[#1a1216] text-[#d4b8bc]",
                   )}
                 >
-                  <span className="tabular-nums text-[#8b97ab]">
+                  <span className="text-[10px] tabular-nums text-[#8b97ab]">
                     {s.advanceSeed ?? i + 1}
                   </span>
-                  <span className="truncate font-semibold tracking-wide uppercase">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-md text-[8px] font-black text-white"
+                    style={{ backgroundColor: s.team.color }}
+                  >
+                    {s.team.short.length > 3
+                      ? s.team.short.slice(0, 2)
+                      : s.team.short.slice(0, 3)}
+                  </span>
+                  <span className="truncate font-bold tracking-wide uppercase">
                     {s.team.short}
-                    <span className="ml-1 font-normal text-[#8b97ab]">
+                    <span className="ml-1 font-semibold text-[#8b97ab]">
                       +{s.progressive}
                     </span>
                   </span>
                   <span
                     className={cn(
-                      "text-[10px] font-medium uppercase",
-                      isAdvance ? "text-[#2ecc71]" : "text-[#e74c3c]",
+                      "text-[9px] font-bold tracking-wide uppercase",
+                      isAdvance ? "text-[#2ecc71]" : "text-[#ef4444]",
                     )}
                   >
                     {isAdvance ? "adv" : "out"}
