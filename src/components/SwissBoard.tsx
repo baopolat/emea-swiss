@@ -9,12 +9,10 @@ import {
   buildSwissSnapshot,
   type RoundResults,
 } from "@/lib/swiss";
-import { MAX_ROUNDS } from "@/data/teams";
 
 const STORAGE_KEY = "emea-masters-swiss-summer-2026";
 
 function loadResults(): RoundResults[] {
-  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -26,26 +24,33 @@ function loadResults(): RoundResults[] {
 }
 
 export function SwissBoard() {
-  const [results, setResults] = useState<RoundResults[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  // null until client storage is read — avoids wiping clicks with a late hydrate.
+  const [results, setResults] = useState<RoundResults[] | null>(null);
 
   useEffect(() => {
     setResults(loadResults());
-    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (results === null) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
-  }, [results, hydrated]);
+  }, [results]);
 
-  const snapshot = useMemo(() => buildSwissSnapshot(results), [results]);
+  const snapshot = useMemo(() => {
+    if (results === null) return null;
+    try {
+      return buildSwissSnapshot(results);
+    } catch (error) {
+      console.error("Swiss pairing failed", error);
+      return buildSwissSnapshot(results.slice(0, Math.max(0, results.length - 1)));
+    }
+  }, [results]);
 
   function setWinner(roundIndex: number, matchId: string, winnerId: string) {
     setResults((prev) => {
-      const next = prev.map((r) => ({ ...r }));
+      const base = prev ?? [];
+      const next = base.map((r) => ({ ...r }));
       while (next.length <= roundIndex) next.push({});
-      // Changing an earlier round invalidates later results
       const trimmed = next.slice(0, roundIndex + 1);
       trimmed[roundIndex] = {
         ...trimmed[roundIndex],
@@ -57,9 +62,9 @@ export function SwissBoard() {
 
   function clearWinner(roundIndex: number, matchId: string) {
     setResults((prev) => {
-      const next = prev.map((r) => ({ ...r }));
-      if (!next[roundIndex]) return prev;
-      const trimmed = next.slice(0, roundIndex + 1);
+      const base = prev ?? [];
+      if (!base[roundIndex]) return base;
+      const trimmed = base.slice(0, roundIndex + 1).map((r) => ({ ...r }));
       const copy = { ...trimmed[roundIndex] };
       delete copy[matchId];
       trimmed[roundIndex] = copy;
@@ -68,11 +73,19 @@ export function SwissBoard() {
   }
 
   function resetRound(roundIndex: number) {
-    setResults((prev) => prev.slice(0, roundIndex));
+    setResults((prev) => (prev ?? []).slice(0, roundIndex));
   }
 
   function resetAll() {
     setResults([]);
+  }
+
+  if (results === null || snapshot === null) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-center px-4 py-24 text-[var(--mist)]">
+        Loading Swiss board…
+      </div>
+    );
   }
 
   return (
@@ -129,9 +142,6 @@ export function SwissBoard() {
                       {roundIndex === 0
                         ? " · official Pool 0-0 pairings"
                         : " · FIDE Dutch pairings"}
-                      {roundIndex + 1 <= MAX_ROUNDS
-                        ? ""
-                        : ""}
                     </p>
                   </div>
                   {roundIndex > 0 || decided > 0 ? (
