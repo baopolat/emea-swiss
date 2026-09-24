@@ -1,6 +1,7 @@
 "use client";
 
 import type { Standing } from "@/lib/swiss";
+import { TeamLogo } from "@/components/MatchCard";
 import { cn } from "@/lib/utils";
 
 type FinalResultsColumnProps = {
@@ -78,14 +79,7 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
                   <span className="text-[10px] tabular-nums text-[#8b97ab]">
                     {s.advanceSeed ?? i + 1}
                   </span>
-                  <span
-                    className="flex size-6 items-center justify-center rounded-md text-[8px] font-black text-white"
-                    style={{ backgroundColor: s.team.color }}
-                  >
-                    {s.team.short.length > 3
-                      ? s.team.short.slice(0, 2)
-                      : s.team.short.slice(0, 3)}
-                  </span>
+                  <TeamLogo team={s.team} size={24} />
                   <span className="truncate font-bold tracking-wide uppercase">
                     {s.team.short}
                     <span className="ml-1 font-semibold text-[#8b97ab]">

@@ -24,7 +24,22 @@ Open [http://127.0.0.1:43127](http://127.0.0.1:43127).
 
 Results persist in `localStorage` for the current browser.
 
-## Stack
+## Team logos
 
-- Next.js (App Router) + TypeScript + Tailwind + shadcn/ui
-- `@echecs/swiss` for Dutch pairing
+Square logos are cached under [`public/logos/`](public/logos/) from
+[Leaguepedia](https://lol.fandom.com) (`lol.fandom.com` MediaWiki `imageinfo`).
+
+Refresh (rate-limited — run sparingly):
+
+```bash
+npm run fetch-logos
+```
+
+## Format
+
+- 32 teams, up to 7 rounds
+- 4 wins → advance · 4 losses → eliminated
+- Pairings: FIDE Dutch within score groups
+- Advancement seeding for identical records:
+  1. **Progressive Score** (R1 win = 7 … R7 win = 1)
+  2. Initial Swiss seed

@@ -214,8 +214,8 @@ export function SwissBoard() {
       </div>
 
       <footer className="border-t border-[#243044] px-4 py-3 text-[11px] text-[#5c6b82] sm:px-6">
-        Official shortcodes · Progressive Score (R1=7 … R7=1) then Swiss seed ·
-        Qual/elim pools Bo3, otherwise Bo1
+        Official shortcodes · Logos from Leaguepedia · Progressive Score (R1=7 … R7=1)
+        then Swiss seed · Qual/elim pools Bo3, otherwise Bo1
       </footer>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { TEAM_BY_ID, type Team } from "@/data/teams";
 import { cn } from "@/lib/utils";
 import type { MatchResult, Matchup } from "@/lib/swiss";
@@ -91,9 +92,6 @@ function TeamRow({
   score: string;
   onClick: () => void;
 }) {
-  const badgeText =
-    team.short.length > 3 ? team.short.slice(0, 2) : team.short.slice(0, 3);
-
   return (
     <button
       type="button"
@@ -107,19 +105,7 @@ function TeamRow({
       )}
     >
       <span className="relative inline-flex size-7 shrink-0 items-center justify-center">
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-md text-[9px] font-black tracking-tight",
-            selected ? "ring-1 ring-black/20" : "ring-1 ring-white/10",
-            lost && "opacity-55 grayscale",
-          )}
-          style={{
-            backgroundColor: selected ? "#0b1220" : team.color,
-            color: isLight(team.color) && !selected ? "#0b1220" : "#fff",
-          }}
-        >
-          {badgeText}
-        </span>
+        <TeamLogo team={team} lost={lost} selected={selected} />
         <span
           className={cn(
             "absolute -top-1 -left-1 flex size-3.5 items-center justify-center rounded-full text-[8px] font-bold",
@@ -168,11 +154,55 @@ function TeamRow({
   );
 }
 
-function isLight(hex: string): boolean {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return false;
-  const r = Number.parseInt(h.slice(0, 2), 16);
-  const g = Number.parseInt(h.slice(2, 4), 16);
-  const b = Number.parseInt(h.slice(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000 > 160;
+export function TeamLogo({
+  team,
+  lost = false,
+  selected = false,
+  size = 28,
+}: {
+  team: Team;
+  lost?: boolean;
+  selected?: boolean;
+  size?: number;
+}) {
+  const [failed, setFailed] = useState(false);
+  const px = `${size}px`;
+
+  if (failed) {
+    const badgeText =
+      team.short.length > 3 ? team.short.slice(0, 2) : team.short.slice(0, 3);
+    return (
+      <span
+        className={cn(
+          "flex items-center justify-center rounded-md text-[9px] font-black tracking-tight ring-1 ring-white/10",
+          lost && "opacity-55 grayscale",
+        )}
+        style={{
+          width: px,
+          height: px,
+          backgroundColor: selected ? "#0b1220" : team.color,
+          color: "#fff",
+        }}
+      >
+        {badgeText}
+      </span>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={team.logo}
+      alt=""
+      width={size}
+      height={size}
+      onError={() => setFailed(true)}
+      className={cn(
+        "rounded-md bg-[#0b1220] object-contain p-0.5 ring-1 ring-white/10",
+        lost && "opacity-50 grayscale",
+        selected && "ring-black/25",
+      )}
+      style={{ width: px, height: px }}
+    />
+  );
 }
