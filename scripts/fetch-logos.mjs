@@ -22,33 +22,33 @@ const TEAMS = [
   ["big", "BIG"],
   ["tln", "TLN Pirates"],
   ["g2n", "G2 NORD"],
-  ["hrta", "Team Heretics Academy"],
+  ["hrts", "Team Heretics Academy"],
   ["bw", "Bushido Wildcats"],
   ["anb", "Anubis Gaming"],
   ["kcb", "Karmine Corp Blue"],
   ["khk", "Kaufland Hangry Knights"],
   ["pcf", "PCIFIC Esports"],
   ["jsk", "JSK Esports"],
-  ["hmble", "HMBLE"],
-  ["val", "Valerion"],
+  ["hmb", "HMBLE"],
+  ["vlr", "Valerion"],
   ["cg", "Colossal Gaming"],
   ["tp", "Team Phantasma"],
-  ["bmb", "Bomba Team"],
-  ["ntb", "Nightbirds"],
+  ["boom", "Bomba Team"],
+  ["nbs", "Nightbirds"],
   ["fec", "Frites Esports Club"],
   ["mgz", "Magaza Esports"],
   ["fsk", "Forsaken (Polish Team)"],
   ["esb", "ESuba"],
-  ["sns", "Senshi eSports (Benelux Team)"],
+  ["snsh", "Senshi eSports (Benelux Team)"],
   ["tsc", "The Secret Club"],
   ["wd", "White Dragons"],
-  ["rdy", "Ruddy Corporation"],
-  ["uol", "Unicorns of Love Sexy Edition"],
+  ["rud", "Ruddy Corporation"],
+  ["use", "Unicorns of Love Sexy Edition"],
   ["bar", "Barça eSports"],
   ["ucam", "UCAM Esports Club"],
   ["lds", "LODIS (Polish Team)"],
-  ["skc", "Skillcamp"],
-  ["avl", "SU Esports"],
+  ["sc", "Skillcamp"],
+  ["su", "SU Esports"],
   ["gsmc", "Gamespace Mediterranean College Esports"],
   ["ots", "Otter Side"],
 ];
@@ -114,7 +114,13 @@ async function main() {
     const dl = base.includes("/revision/latest")
       ? `${base}/scale-to-width-down/128`
       : base;
-    const res = await fetch(dl, { headers: { "User-Agent": UA } });
+    const res = await fetch(dl, {
+      headers: {
+        "User-Agent": UA,
+        Referer: "https://lol.fandom.com/",
+        Accept: "image/*,*/*",
+      },
+    });
     if (!res.ok) {
       console.warn("download fail", id, res.status);
       continue;
