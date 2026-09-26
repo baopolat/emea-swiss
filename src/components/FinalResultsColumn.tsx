@@ -41,7 +41,7 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
   const eliminated = finished.filter((s) => s.status === "eliminated").length;
 
   return (
-    <div className="fade-up flex w-[260px] shrink-0 flex-col gap-3">
+    <div className="fade-up flex w-full flex-col gap-3 lg:w-[260px] lg:shrink-0">
       <div className="sticky top-0 z-10 overflow-hidden rounded-xl border border-[#2a3448] bg-[#0e1522] shadow-[0_12px_24px_-12px_rgba(0,0,0,0.85)]">
         <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[#3dd68c] via-[#d4b45a] to-[#f07178]" />
         <div className="px-3.5 py-3">

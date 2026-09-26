@@ -100,7 +100,7 @@ function TeamRow({
       title={`${team.name} (#${team.seed}) · click to ${selected ? "clear" : "pick winner"}`}
       onClick={onClick}
       className={cn(
-        "grid w-full grid-cols-[30px_minmax(0,1fr)_auto_34px] items-center gap-2 px-2.5 py-2.5 text-left transition duration-150",
+        "grid w-full grid-cols-[30px_minmax(0,1fr)_auto_34px] items-center gap-2 px-2.5 py-3 text-left transition duration-150 sm:py-2.5",
         selected &&
           "bg-[linear-gradient(90deg,#3dd68c_0%,#2ebd78_100%)] text-[#06140e]",
         !selected &&
