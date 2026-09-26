@@ -172,12 +172,39 @@ export function SwissBoard() {
       const base = prev ?? [];
       const next = base.map((r) => ({ ...r }));
       while (next.length <= roundIndex) next.push({});
-      const trimmed = next.slice(0, roundIndex + 1);
-      const filled: RoundResults = {};
+      const existing = { ...next[roundIndex] };
+      let changed = false;
       for (const match of matchups) {
-        filled[match.id] = { winnerId: pick(match) };
+        if (existing[match.id]) continue;
+        existing[match.id] = { winnerId: pick(match) };
+        changed = true;
       }
-      trimmed[roundIndex] = filled;
+      if (!changed) return base;
+      // Keep prior rounds; drop later ones so pairings rebuild from this fill
+      const trimmed = next.slice(0, roundIndex + 1);
+      trimmed[roundIndex] = existing;
+      return trimmed;
+    });
+  }
+
+  /** Restore Leaguepedia winners for matches that have official results. */
+  function fillOfficialRound(roundIndex: number, matchups: Matchup[]) {
+    setResults((prev) => {
+      const base = prev ?? [];
+      const next = base.map((r) => ({ ...r }));
+      while (next.length <= roundIndex) next.push({});
+      const existing = { ...next[roundIndex] };
+      let changed = false;
+      for (const match of matchups) {
+        const official = officialWinnerForMatch(match, officialGames);
+        if (!official) continue;
+        if (existing[match.id]?.winnerId === official) continue;
+        existing[match.id] = { winnerId: official };
+        changed = true;
+      }
+      if (!changed) return base;
+      const trimmed = next.slice(0, roundIndex + 1);
+      trimmed[roundIndex] = existing;
       return trimmed;
     });
   }
@@ -307,6 +334,17 @@ export function SwissBoard() {
                     >
                       Higher seed
                     </button>
+                    {matchups.some(
+                      (m) => officialWinnerForMatch(m, officialGames),
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() => fillOfficialRound(roundIndex, matchups)}
+                        className="rounded border border-[#2ecc71]/30 bg-[#121820] px-1.5 py-0.5 text-[9px] font-semibold text-[#2ecc71] transition-colors hover:border-[#2ecc71]/55 hover:bg-[#0f1a14] hover:text-[#3dd68c]"
+                      >
+                        Official
+                      </button>
+                    )}
                     {(roundIndex > 0 || decided > 0) && (
                       <button
                         type="button"
