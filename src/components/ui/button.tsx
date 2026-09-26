@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
@@ -39,14 +40,22 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants>
+
+/** Base UI button typings omit className in this version; runtime supports it. */
+const StyledButton = ButtonPrimitive as unknown as React.ForwardRefExoticComponent<
+  ButtonProps & React.RefAttributes<HTMLElement> & { "data-slot"?: string }
+>
+
 function Button({
   className,
   variant = "default",
   size = "default",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
   return (
-    <ButtonPrimitive
+    <StyledButton
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}

@@ -193,7 +193,9 @@ export async function fetchLeaguepediaGames(): Promise<{
         offset: String(offset),
       });
       const batch = data.cargoquery ?? [];
-      for (const item of batch) rows.push(item.title ?? (item as CargoRow));
+      for (const item of batch) {
+        rows.push((item.title ?? item) as CargoRow);
+      }
       if (batch.length < limit) break;
       offset += limit;
       await sleep(400);
