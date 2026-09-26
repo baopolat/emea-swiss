@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const display = Bebas_Neue({
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${display.variable} ${sans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
