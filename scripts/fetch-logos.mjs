@@ -5,7 +5,10 @@
  *
  * Usage: npm run fetch-logos
  *
- * Be polite — Leaguepedia rate-limits unauthenticated Cargo queries.
+ * Optional auth: set LEAGUEPEDIA_BOT_USERNAME / LEAGUEPEDIA_BOT_PASSWORD in .env
+ * (Fandom Special:BotPasswords — username is YourUser@BotName).
+ *
+ * Be polite — Leaguepedia rate-limits unauthenticated requests.
  * This script prefers imageinfo filename resolution with delays.
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "fs";
@@ -17,6 +20,45 @@ const ROOT = join(__dirname, "..");
 const OUT = join(ROOT, "public", "logos");
 const MAP = join(__dirname, "logo-map.json");
 const UA = "EMEA-Swiss-Calculator/1.0 (educational; logo cache script)";
+const API = "https://lol.fandom.com/api.php";
+
+loadEnvFile(join(ROOT, ".env"));
+
+const cookieJar = new Map();
+
+function loadEnvFile(path) {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = val;
+  }
+}
+
+function storeCookies(res) {
+  const raw = res.headers.getSetCookie?.() ?? [];
+  for (const header of raw) {
+    const pair = header.split(";")[0];
+    const eq = pair.indexOf("=");
+    if (eq === -1) continue;
+    cookieJar.set(pair.slice(0, eq), pair.slice(eq + 1));
+  }
+}
+
+function cookieHeader() {
+  if (cookieJar.size === 0) return undefined;
+  return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
+}
 
 const TEAMS = [
   ["big", "BIG"],
@@ -53,12 +95,65 @@ const TEAMS = [
   ["ots", "Otter Side"],
 ];
 
-async function api(params) {
-  const url = new URL("https://lol.fandom.com/api.php");
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
+async function api(params, { method = "GET", body } = {}) {
+  const url = new URL(API);
+  const headers = { "User-Agent": UA };
+  const cookie = cookieHeader();
+  if (cookie) headers.Cookie = cookie;
+
+  let res;
+  if (method === "POST") {
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
+    const form = new URLSearchParams({ format: "json", ...params });
+    if (body) for (const [k, v] of Object.entries(body)) form.set(k, v);
+    res = await fetch(url, { method: "POST", headers, body: form });
+  } else {
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    if (!url.searchParams.has("format")) url.searchParams.set("format", "json");
+    res = await fetch(url, { headers });
+  }
+
+  storeCookies(res);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+async function loginWithBotPassword() {
+  const username = process.env.LEAGUEPEDIA_BOT_USERNAME?.trim();
+  const password = process.env.LEAGUEPEDIA_BOT_PASSWORD?.trim();
+  if (!username || !password) {
+    console.warn(
+      "No LEAGUEPEDIA_BOT_USERNAME/PASSWORD in .env — running unauthenticated",
+    );
+    return false;
+  }
+
+  const tokenData = await api({
+    action: "query",
+    meta: "tokens",
+    type: "login",
+  });
+  const loginToken = tokenData.query?.tokens?.logintoken;
+  if (!loginToken) throw new Error("Could not get MediaWiki login token");
+
+  const login = await api(
+    {
+      action: "login",
+      lgname: username,
+      lgpassword: password,
+      lgtoken: loginToken,
+    },
+    { method: "POST" },
+  );
+
+  const result = login.login?.result;
+  if (result !== "Success") {
+    throw new Error(
+      `Leaguepedia login failed: ${result ?? "unknown"} (${login.login?.reason ?? login.error?.info ?? "check bot password"})`,
+    );
+  }
+  console.log("logged in as", login.login?.lgusername ?? username);
+  return true;
 }
 
 function sleep(ms) {
@@ -67,9 +162,7 @@ function sleep(ms) {
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const titles = TEAMS.map(([, name]) => `File:${name}logo square.png`).join(
-    "|",
-  );
+  await loginWithBotPassword();
 
   // imageinfo in batches of 20
   const mapping = existsSync(MAP) ? JSON.parse(readFileSync(MAP, "utf8")) : {};
@@ -114,13 +207,14 @@ async function main() {
     const dl = base.includes("/revision/latest")
       ? `${base}/scale-to-width-down/128`
       : base;
-    const res = await fetch(dl, {
-      headers: {
-        "User-Agent": UA,
-        Referer: "https://lol.fandom.com/",
-        Accept: "image/*,*/*",
-      },
-    });
+    const headers = {
+      "User-Agent": UA,
+      Referer: "https://lol.fandom.com/",
+      Accept: "image/*,*/*",
+    };
+    const cookie = cookieHeader();
+    if (cookie) headers.Cookie = cookie;
+    const res = await fetch(dl, { headers });
     if (!res.ok) {
       console.warn("download fail", id, res.status);
       continue;

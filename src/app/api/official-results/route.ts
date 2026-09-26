@@ -1,0 +1,50 @@
+import { unstable_cache } from "next/cache";
+import { NextResponse } from "next/server";
+import staticOfficial from "@/data/official-results.json";
+import { fetchLeaguepediaGames, OVERVIEW_PAGE } from "@/lib/leaguepedia";
+import type { OfficialResultsFile } from "@/lib/official";
+
+export const runtime = "nodejs";
+
+const POLL_SECONDS = 300;
+
+const getCachedLeaguepedia = unstable_cache(
+  async () => fetchLeaguepediaGames(),
+  ["leaguepedia-official-results", OVERVIEW_PAGE],
+  { revalidate: POLL_SECONDS },
+);
+
+export async function GET() {
+  try {
+    const live = await getCachedLeaguepedia();
+    const body: OfficialResultsFile & { source: string } = {
+      fetchedAt: new Date().toISOString(),
+      overviewPage: live.overviewPage,
+      games: live.games,
+      rounds: [],
+      source: "leaguepedia",
+    };
+    return NextResponse.json(body, {
+      headers: {
+        "Cache-Control": `public, s-maxage=${POLL_SECONDS}, stale-while-revalidate=60`,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "fetch failed";
+    console.error("official-results API:", message);
+    const fallback = staticOfficial as OfficialResultsFile;
+    return NextResponse.json(
+      {
+        ...fallback,
+        source: "static",
+        error: message,
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
+        },
+      },
+    );
+  }
+}

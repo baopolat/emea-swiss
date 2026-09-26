@@ -35,6 +35,22 @@ Refresh (rate-limited — run sparingly):
 npm run fetch-logos
 ```
 
+## Official results
+
+Completed Swiss matches are pulled from Leaguepedia Cargo (`MatchSchedule`) for
+**EMEA Masters/2026 Season/Summer Main Event** into
+[`src/data/official-results.json`](src/data/official-results.json).
+
+```bash
+npm run fetch-results
+```
+
+Uses `LEAGUEPEDIA_BOT_USERNAME` / `LEAGUEPEDIA_BOT_PASSWORD` from `.env` when set.
+The live site also polls `/api/official-results` every **5 minutes** (same secrets on
+Vercel). The board opens on those results by default; **Reset all** restores them.
+Picks that differ from Leaguepedia highlight in gold.
+Undecided matches fill in automatically when new official winners appear.
+
 ## Format
 
 - 32 teams, up to 7 rounds

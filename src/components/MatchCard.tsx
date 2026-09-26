@@ -9,6 +9,8 @@ import { seriesFormat } from "@/lib/brackets";
 type MatchCardProps = {
   match: Matchup;
   result?: MatchResult;
+  /** Leaguepedia official winner for this pair, if known. */
+  officialWinnerId?: string;
   progressiveA?: number;
   progressiveB?: number;
   onPick: (winnerId: string) => void;
@@ -18,6 +20,7 @@ type MatchCardProps = {
 export function MatchCard({
   match,
   result,
+  officialWinnerId,
   progressiveA,
   progressiveB,
   onPick,
@@ -28,19 +31,26 @@ export function MatchCard({
   const winner = result?.winnerId;
   const format = seriesFormat(match.pool);
   const decided = !!winner;
+  const diverged =
+    decided && !!officialWinnerId && winner !== officialWinnerId;
 
   return (
     <div
       className={cn(
-        "group/match overflow-hidden rounded-xl border bg-[#0e1522]/90 text-[13px] transition duration-200",
-        decided
-          ? "border-[#2ecc71]/25 shadow-[0_0_0_1px_rgba(61,214,140,0.08)]"
-          : "match-live border-[#2a3448] shadow-[0_8px_24px_-16px_rgba(0,0,0,0.7)] hover:border-[#3d4d66]",
+        "group/match overflow-hidden rounded-md border bg-[#0e1522]/90 text-[11px] transition duration-150",
+        decided &&
+          !diverged &&
+          "border-[#2ecc71]/25 shadow-[0_0_0_1px_rgba(61,214,140,0.06)]",
+        diverged &&
+          "border-[#d4a84b]/35 shadow-[0_0_0_1px_rgba(212,168,75,0.1)]",
+        !decided &&
+          "match-live border-[#2a3448] hover:border-[#3d4d66]",
       )}
     >
       <TeamRow
         team={teamA}
         selected={winner === teamA.id}
+        diverged={diverged && winner === teamA.id}
         lost={!!winner && winner !== teamA.id}
         progressive={progressiveA}
         score={scoreFor(decided, winner === teamA.id, format)}
@@ -48,16 +58,15 @@ export function MatchCard({
           winner === teamA.id ? onClear() : onPick(teamA.id)
         }
       />
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center bg-[#0a101a] px-2.5 py-[3px]">
-        <div className="h-px bg-gradient-to-r from-transparent to-[#2a3448]" />
-        <span className="px-2.5 text-[9px] font-bold tracking-[0.2em] text-[#6b7a91] uppercase">
+      <div className="flex items-center justify-center bg-[#0a101a] py-px">
+        <span className="text-[7px] font-bold tracking-[0.16em] text-[#5c6b82] uppercase">
           {format}
         </span>
-        <div className="h-px bg-gradient-to-l from-transparent to-[#2a3448]" />
       </div>
       <TeamRow
         team={teamB}
         selected={winner === teamB.id}
+        diverged={diverged && winner === teamB.id}
         lost={!!winner && winner !== teamB.id}
         progressive={progressiveB}
         score={scoreFor(decided, winner === teamB.id, format)}
@@ -82,6 +91,7 @@ function scoreFor(
 function TeamRow({
   team,
   selected,
+  diverged,
   lost,
   progressive,
   score,
@@ -89,6 +99,7 @@ function TeamRow({
 }: {
   team: Team;
   selected: boolean;
+  diverged: boolean;
   lost: boolean;
   progressive?: number;
   score: string;
@@ -100,47 +111,43 @@ function TeamRow({
       title={`${team.name} (#${team.seed}) · click to ${selected ? "clear" : "pick winner"}`}
       onClick={onClick}
       className={cn(
-        "grid w-full grid-cols-[30px_minmax(0,1fr)_auto_34px] items-center gap-2 px-2.5 py-3 text-left transition duration-150 sm:py-2.5",
+        "grid w-full grid-cols-[22px_minmax(0,1fr)_auto_18px] items-center gap-1 px-1.5 py-[3px] text-left transition duration-100",
         selected &&
+          !diverged &&
           "bg-[linear-gradient(90deg,#3dd68c_0%,#2ebd78_100%)] text-[#06140e]",
+        selected &&
+          diverged &&
+          "bg-[linear-gradient(90deg,#e0b85c_0%,#d4a84b_100%)] text-[#1a1206]",
         !selected &&
           !lost &&
           "bg-[#141c2a] text-white hover:bg-[#1a2435] active:scale-[0.995]",
         lost && "bg-[#0c121c] text-[#65748a]",
       )}
     >
-      <span className="relative inline-flex size-7 shrink-0 items-center justify-center">
-        <TeamLogo team={team} lost={lost} selected={selected} />
+      <span className="relative inline-flex size-5 shrink-0 items-center justify-center">
+        <TeamLogo team={team} lost={lost} selected={selected} size={18} />
         <span
           className={cn(
-            "absolute -top-1 -left-1 flex size-3.5 items-center justify-center rounded-full text-[8px] font-black",
-            selected
-              ? "bg-[#06140e] text-[#3dd68c]"
-              : "bg-[#070b14] text-[#c5cedd] ring-1 ring-[#2a3448]",
+            "absolute -top-0.5 -left-0.5 flex size-2.5 items-center justify-center rounded-full text-[6px] font-black leading-none",
+            selected && !diverged && "bg-[#06140e] text-[#3dd68c]",
+            selected && diverged && "bg-[#1a1206] text-[#e0b85c]",
+            !selected && "bg-[#070b14] text-[#c5cedd] ring-1 ring-[#2a3448]",
           )}
         >
           {team.seed}
         </span>
       </span>
 
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-extrabold tracking-wide uppercase">
-          {team.short}
-        </span>
-        <span
-          className={cn(
-            "block truncate text-[10px] leading-tight",
-            selected ? "text-[#06140e]/65" : "text-[#7a879c]",
-          )}
-        >
-          {team.name}
-        </span>
+      <span className="min-w-0 truncate text-[11px] font-extrabold tracking-wide uppercase">
+        {team.short}
       </span>
 
       <span
         className={cn(
-          "text-[10px] font-semibold tabular-nums",
-          selected ? "text-[#06140e]/60" : "text-[#5c6b82]",
+          "text-[8px] font-semibold tabular-nums",
+          selected && !diverged && "text-[#06140e]/55",
+          selected && diverged && "text-[#1a1206]/55",
+          !selected && "text-[#5c6b82]",
         )}
       >
         {progressive != null && progressive > 0 ? `+${progressive}` : ""}
@@ -148,8 +155,10 @@ function TeamRow({
 
       <span
         className={cn(
-          "text-center font-[family-name:var(--font-display)] text-xl leading-none tracking-wide tabular-nums",
-          selected ? "text-[#06140e]" : "text-[#e8edf5]",
+          "text-center font-[family-name:var(--font-display)] text-sm leading-none tabular-nums",
+          selected && !diverged && "text-[#06140e]",
+          selected && diverged && "text-[#1a1206]",
+          !selected && "text-[#e8edf5]",
           lost && "text-[#4f5d73]",
         )}
       >
@@ -179,7 +188,7 @@ export function TeamLogo({
     return (
       <span
         className={cn(
-          "flex items-center justify-center rounded-md text-[9px] font-black tracking-tight ring-1 ring-white/10",
+          "flex items-center justify-center rounded text-[7px] font-black tracking-tight ring-1 ring-white/10",
           lost && "opacity-55 grayscale",
         )}
         style={{
@@ -203,7 +212,7 @@ export function TeamLogo({
       height={size}
       onError={() => setFailed(true)}
       className={cn(
-        "rounded-md bg-[#070b14] object-contain p-0.5 ring-1 ring-white/10 transition",
+        "rounded bg-[#070b14] object-contain p-px ring-1 ring-white/10 transition",
         lost && "opacity-45 grayscale",
         selected && "ring-black/20",
       )}
