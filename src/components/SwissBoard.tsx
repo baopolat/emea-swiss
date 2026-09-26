@@ -223,15 +223,16 @@ export function SwissBoard() {
       <header className="relative z-20 shrink-0 border-b border-[#1e2838] bg-[#070b12]/90 backdrop-blur-xl">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#2ecc71]/35 to-transparent" />
         <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-2 px-3 py-2 sm:px-4">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#2ecc71] shadow-[0_0_20px_-4px_rgba(46,204,113,0.55)]">
-              <span className="font-[family-name:var(--font-display)] text-[1rem] leading-none tracking-[0.04em] text-[#04150c]">
-                EM
-              </span>
-            </div>
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/emea-masters.png"
+              alt="EMEA Masters"
+              className="h-8 w-auto shrink-0 object-contain sm:h-9"
+            />
             <div className="min-w-0">
               <p className="truncate text-[8px] font-bold tracking-[0.2em] text-[#2ecc71] uppercase sm:text-[9px]">
-                EMEA Masters · Summer 2026
+                Summer 2026
               </p>
               <h1 className="font-[family-name:var(--font-display)] text-[1.2rem] leading-none tracking-[0.06em] text-white uppercase sm:text-[1.35rem]">
                 Swiss Stage

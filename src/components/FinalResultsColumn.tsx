@@ -69,7 +69,7 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
           </p>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden">
           {orderedKeys.map((key, groupIndex) => {
             const items = groups.get(key) ?? [];
             const isAdvance = items[0]?.status === "advanced";
