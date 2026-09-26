@@ -156,7 +156,7 @@ export function SwissBoard() {
             )}
             <p className="hidden max-w-[13rem] text-right text-[11px] leading-snug text-[#6b7a91] xl:block">
               Click a shortcode to pick. Next round unlocks when all matches are
-              set · FIDE Dutch
+              set · same-record pools
             </p>
             <Button
               type="button"
@@ -225,7 +225,7 @@ export function SwissBoard() {
                         ? "Complete · next stage unlocked"
                         : isLatest
                           ? "Finish all matches to unlock next"
-                          : "FIDE Dutch pairings"}
+                          : "Same-record pool pairings"}
                   </p>
                   {(roundIndex > 0 || decided > 0) && (
                     <button

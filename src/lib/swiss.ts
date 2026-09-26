@@ -187,6 +187,44 @@ function completedRoundsFromResults(
   return completed;
 }
 
+function comparePoolKeys(a: string, b: string): number {
+  const [aw, al] = a.split("-").map(Number);
+  const [bw, bl] = b.split("-").map(Number);
+  if (bw !== aw) return bw - aw;
+  return al - bl;
+}
+
+/**
+ * Pair one W-L pool. Prefer FIDE Dutch (avoids rematches); if that leaves
+ * someone unpaired in an even pool, retry with empty history so rematches
+ * are allowed rather than floating into a different score group.
+ */
+function pairWithinPool(
+  ids: string[],
+  records: Records,
+  completed: CompletedRound[],
+): { white: string; black: string }[] {
+  if (ids.length < 2) return [];
+
+  const players = toPlayers(ids, records);
+  const poolSet = new Set(ids);
+  const adapted = adaptRoundsForActive(completed, poolSet);
+  const withHistory = pair(players, adapted, { expectedRounds: MAX_ROUNDS });
+
+  const expectedPairs = Math.floor(ids.length / 2);
+  if (withHistory.games.length >= expectedPairs) {
+    return withHistory.games.map((g) => ({ white: g.white, black: g.black }));
+  }
+
+  // Rematch wall inside the pool — keep same-record matches, allow rematches.
+  const fresh = pair(players, [], { expectedRounds: MAX_ROUNDS });
+  return fresh.games.map((g) => ({ white: g.white, black: g.black }));
+}
+
+/**
+ * Pair every W-L pool on its own for all rounds after R1 (incl. R4/R5):
+ * 3-0 vs 3-0, 2-1 vs 2-1, 2-2 vs 2-2, etc. Never float across records.
+ */
 function pairNextRound(
   roundIndex: number,
   records: Records,
@@ -199,27 +237,37 @@ function pairNextRound(
 
   if (activeIds.length < 2) return [];
 
-  const activeSet = new Set(activeIds);
   const completed = completedRoundsFromResults(priorRounds, results);
-  const adapted = adaptRoundsForActive(completed, activeSet);
-  const players = toPlayers(activeIds, records);
 
-  const paired = pair(players, adapted, { expectedRounds: MAX_ROUNDS });
+  const byPool = new Map<string, string[]>();
+  for (const id of activeIds) {
+    const key = poolKey(records[id].wins, records[id].losses);
+    const list = byPool.get(key) ?? [];
+    list.push(id);
+    byPool.set(key, list);
+  }
 
-  return paired.games.map((p, i) => {
-    const a = p.white;
-    const b = p.black;
-    const poolA = poolKey(records[a].wins, records[a].losses);
-    const poolB = poolKey(records[b].wins, records[b].losses);
-    const pool = poolA === poolB ? poolA : `${poolA}/${poolB}`;
-    return {
-      id: `r${roundIndex + 1}-${i + 1}`,
-      label: `${roundIndex + 1}.${i + 1}`,
-      teamA: a,
-      teamB: b,
-      pool,
-    };
-  });
+  const poolOrder = [...byPool.keys()].sort(comparePoolKeys);
+  const matchups: Matchup[] = [];
+  let matchNum = 0;
+
+  for (const pool of poolOrder) {
+    const ids = byPool.get(pool) ?? [];
+    const games = pairWithinPool(ids, records, completed);
+
+    for (const p of games) {
+      matchNum += 1;
+      matchups.push({
+        id: `r${roundIndex + 1}-${matchNum}`,
+        label: `${roundIndex + 1}.${matchNum}`,
+        teamA: p.white,
+        teamB: p.black,
+        pool,
+      });
+    }
+  }
+
+  return matchups;
 }
 
 function compareStandings(a: Standing, b: Standing): number {
@@ -231,7 +279,7 @@ function compareStandings(a: Standing, b: Standing): number {
 
 /**
  * Build the full Swiss snapshot from user-entered results.
- * Round 1 is fixed; later rounds come from FIDE Dutch via @echecs/swiss.
+ * Round 1 is fixed; later rounds pair within each W-L pool via FIDE Dutch.
  */
 export function buildSwissSnapshot(results: RoundResults[]): SwissSnapshot {
   const rounds: Matchup[][] = [round1Matchups()];
