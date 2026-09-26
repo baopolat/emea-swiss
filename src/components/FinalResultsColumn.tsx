@@ -37,7 +37,12 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
     ...[...groups.keys()].filter((k) => !RECORD_ORDER.includes(k)),
   ];
 
-  const advanced = finished.filter((s) => s.status === "advanced").length;
+  const playoff = finished.filter(
+    (s) => s.status === "advanced" && (s.advanceSeed ?? 0) <= 13,
+  ).length;
+  const knockout = finished.filter(
+    (s) => s.status === "advanced" && (s.advanceSeed ?? 0) >= 14,
+  ).length;
   const eliminated = finished.filter((s) => s.status === "eliminated").length;
 
   return (
@@ -49,10 +54,15 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
             Final
           </h2>
           {finished.length > 0 && (
-            <div className="mt-1 flex gap-1 text-[9px] font-semibold">
+            <div className="mt-1 flex flex-wrap gap-1 text-[9px] font-semibold">
               <span className="rounded bg-[#3dd68c]/12 px-1.5 py-px text-[#3dd68c]">
-                {advanced} adv
+                {playoff} adv
               </span>
+              {knockout > 0 && (
+                <span className="rounded bg-[#d4b45a]/12 px-1.5 py-px text-[#d4b45a]">
+                  {knockout} ko
+                </span>
+              )}
               <span className="rounded bg-[#f07178]/12 px-1.5 py-px text-[#f07178]">
                 {eliminated} out
               </span>
@@ -96,38 +106,47 @@ export function FinalResultsColumn({ standings }: FinalResultsColumnProps) {
                     {items.length}
                   </span>
                 </div>
-                {items.map((s, i) => (
-                  <div
-                    key={s.team.id}
-                    className={cn(
-                      "grid grid-cols-[16px_18px_minmax(0,1fr)_auto] items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px]",
-                      isAdvance
-                        ? "border-[#3dd68c]/25 bg-[linear-gradient(135deg,#10291d_0%,#0e1a16_100%)] text-[#d8ffe8]"
-                        : "border-[#f07178]/20 bg-[linear-gradient(135deg,#1a1216_0%,#140e12_100%)] text-[#e8c8cc]",
-                    )}
-                  >
-                    <span className="text-[8px] font-semibold tabular-nums text-[#8b97ab]">
-                      {s.advanceSeed ?? i + 1}
-                    </span>
-                    <TeamLogo team={s.team} size={16} />
-                    <span className="min-w-0 truncate font-bold tracking-wide uppercase">
-                      {s.team.short}
-                      <span className="ml-1 font-semibold text-[#8b97ab]">
-                        +{s.progressive}
-                      </span>
-                    </span>
-                    <span
+                {items.map((s, i) => {
+                  const seed = s.advanceSeed ?? i + 1;
+                  const isKnockout =
+                    isAdvance && seed >= 14 && seed <= 16;
+                  return (
+                    <div
+                      key={s.team.id}
                       className={cn(
-                        "rounded px-1 py-px text-[8px] font-bold tracking-wide uppercase",
-                        isAdvance
-                          ? "bg-[#3dd68c]/15 text-[#3dd68c]"
-                          : "bg-[#f07178]/15 text-[#f07178]",
+                        "grid grid-cols-[16px_18px_minmax(0,1fr)_auto] items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px]",
+                        isKnockout
+                          ? "border-[#d4b45a]/30 bg-[linear-gradient(135deg,#292010_0%,#1a150e_100%)] text-[#f5e6c8]"
+                          : isAdvance
+                            ? "border-[#3dd68c]/25 bg-[linear-gradient(135deg,#10291d_0%,#0e1a16_100%)] text-[#d8ffe8]"
+                            : "border-[#f07178]/20 bg-[linear-gradient(135deg,#1a1216_0%,#140e12_100%)] text-[#e8c8cc]",
                       )}
                     >
-                      {isAdvance ? "adv" : "out"}
-                    </span>
-                  </div>
-                ))}
+                      <span className="text-[8px] font-semibold tabular-nums text-[#8b97ab]">
+                        {seed}
+                      </span>
+                      <TeamLogo team={s.team} size={16} />
+                      <span className="min-w-0 truncate font-bold tracking-wide uppercase">
+                        {s.team.short}
+                        <span className="ml-1 font-semibold text-[#8b97ab]">
+                          +{s.progressive}
+                        </span>
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded px-1 py-px text-[8px] font-bold tracking-wide uppercase",
+                          isKnockout
+                            ? "bg-[#d4b45a]/15 text-[#d4b45a]"
+                            : isAdvance
+                              ? "bg-[#3dd68c]/15 text-[#3dd68c]"
+                              : "bg-[#f07178]/15 text-[#f07178]",
+                        )}
+                      >
+                        {isKnockout ? "ko" : isAdvance ? "adv" : "out"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
