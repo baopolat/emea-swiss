@@ -405,15 +405,42 @@ export function SwissBoard() {
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-[#1e2838] px-3 py-1.5 text-[10px] text-[#5c6b82] sm:px-4">
+      <footer className="relative z-30 shrink-0 border-t border-[#1e2838] px-3 py-1.5 text-[10px] text-[#5c6b82] sm:px-4">
         <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-2">
-          <span className="truncate leading-snug">
-            Official shortcodes · Leaguepedia sync
-            {officialSyncedAt
-              ? ` · ${new Date(officialSyncedAt).toLocaleTimeString()}`
-              : ""}{" "}
-            · Progressive then seed
-          </span>
+          <div className="flex min-w-0 items-center gap-1 leading-snug">
+            <span className="truncate">
+              Official shortcodes · Leaguepedia sync
+              {officialSyncedAt
+                ? ` · ${new Date(officialSyncedAt).toLocaleTimeString()}`
+                : ""}
+            </span>
+            <span className="shrink-0">·</span>
+            <span className="group relative shrink-0">
+              <button
+                type="button"
+                className="cursor-help border-b border-dotted border-[#5c6b82]/70 text-[#5c6b82] transition-colors hover:border-[#8b97ab] hover:text-[#8b97ab] focus-visible:border-[#8b97ab] focus-visible:text-[#8b97ab] focus-visible:outline-none"
+                aria-describedby="tiebreak-rules"
+              >
+                Tiebreaks
+              </button>
+              <span
+                id="tiebreak-rules"
+                role="tooltip"
+                className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-56 rounded-md border border-[#2a3448] bg-[#0e1522] px-2.5 py-2 text-left text-[10px] leading-relaxed whitespace-normal text-[#8b97ab] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              >
+                <span className="mb-1 block font-semibold tracking-wide text-white uppercase">
+                  Tiebreaker rules
+                </span>
+                <ol className="list-decimal space-y-0.5 pl-3.5">
+                  <li>
+                    Progressive Score — earlier wins are worth more (R1 = 7 … R7
+                    = 1)
+                  </li>
+                  <li>Seed — better (lower) seed ranks higher</li>
+                </ol>
+              </span>
+            </span>
+          </div>
           <div className="flex shrink-0 items-center gap-0.5">
             <a
               href="https://github.com/baopolat"
