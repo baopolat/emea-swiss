@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --port 43127",
     "lint": "eslint",
-    "smoke": "node scripts/smoke.mjs",
+    "smoke": "node --experimental-strip-types --import ./scripts/smoke-loader.mjs scripts/smoke.mjs",
     "fetch-logos": "node scripts/fetch-logos.mjs",
     "fetch-results": "node scripts/fetch-results.mjs"
   },

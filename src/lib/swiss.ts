@@ -118,46 +118,46 @@ function toPlayers(activeIds: string[], records: Records): Player[] {
 }
 
 /**
- * Convert full game history so @echecs/swiss only sees active players.
- * Games vs departed opponents become pairing byes that preserve points.
+ * Keep real games involving the W–L pool so FIDE colour (A.6) and rematch
+ * history stay intact. Out-of-pool opponent ids remain in the game records
+ * (not registered as players, so they cannot be paired). Do not convert those
+ * games to byes — byes have no colour.
  */
-function adaptRoundsForActive(
+function adaptRoundsForPool(
   completed: CompletedRound[],
-  activeIds: Set<string>,
+  poolIds: Set<string>,
 ): CompletedRound[] {
   return completed.map((round) => {
     const games: Game[] = [];
-    const byes = [...round.byes];
 
     for (const g of round.games) {
-      const whiteActive = activeIds.has(g.white);
-      const blackActive = activeIds.has(g.black);
-
-      if (whiteActive && blackActive) {
-        games.push(g);
-        continue;
-      }
-
-      if (whiteActive && !blackActive) {
-        const whiteWon = g.result === "white";
-        byes.push({
-          player: g.white,
-          kind: whiteWon ? "pairing" : "zero",
-        });
-        continue;
-      }
-
-      if (!whiteActive && blackActive) {
-        const blackWon = g.result === "black";
-        byes.push({
-          player: g.black,
-          kind: blackWon ? "pairing" : "zero",
-        });
-      }
+      const whiteIn = poolIds.has(g.white);
+      const blackIn = poolIds.has(g.black);
+      if (!whiteIn && !blackIn) continue;
+      games.push(g);
     }
 
-    return { games, byes };
+    return { games, byes: [] as CompletedRound["byes"] };
   });
+}
+
+/**
+ * FIDE R1 colours alternate by board order (E.5 / initial-colour):
+ * board 1 → higher seed white, board 2 → higher seed black, etc.
+ * Later rounds use match.teamA/teamB as white/black from Dutch allocation.
+ */
+function gameSidesForMatch(
+  match: Matchup,
+  roundIndex: number,
+  boardIndex: number,
+): { white: string; black: string } {
+  if (roundIndex === 0) {
+    const higherIsWhite = boardIndex % 2 === 0;
+    return higherIsWhite
+      ? { white: match.teamA, black: match.teamB }
+      : { white: match.teamB, black: match.teamA };
+  }
+  return { white: match.teamA, black: match.teamB };
 }
 
 function completedRoundsFromResults(
@@ -169,14 +169,15 @@ function completedRoundsFromResults(
     const roundResults = results[r] ?? {};
     const games: Game[] = [];
     let complete = true;
-    for (const match of rounds[r] ?? []) {
+    const matchups = rounds[r] ?? [];
+    for (let i = 0; i < matchups.length; i++) {
+      const match = matchups[i];
       const res = roundResults[match.id];
       if (!res) {
         complete = false;
         break;
       }
-      const white = match.teamA;
-      const black = match.teamB;
+      const { white, black } = gameSidesForMatch(match, r, i);
       const result: "white" | "black" =
         res.winnerId === white ? "white" : "black";
       games.push({ white, black, result });
@@ -195,9 +196,9 @@ function comparePoolKeys(a: string, b: string): number {
 }
 
 /**
- * Pair one W-L pool. Prefer FIDE Dutch (avoids rematches); if that leaves
- * someone unpaired in an even pool, retry with empty history so rematches
- * are allowed rather than floating into a different score group.
+ * Pair one W–L pool via FIDE Dutch. Colour + opponent history is kept for
+ * pool members (including games vs other records). Rematches only if no other
+ * valid same-W–L pairing exists — never float into a different record.
  */
 function pairWithinPool(
   ids: string[],
@@ -206,18 +207,24 @@ function pairWithinPool(
 ): { white: string; black: string }[] {
   if (ids.length < 2) return [];
 
-  const players = toPlayers(ids, records);
   const poolSet = new Set(ids);
-  const adapted = adaptRoundsForActive(completed, poolSet);
-  const withHistory = pair(players, adapted, { expectedRounds: MAX_ROUNDS });
+  const poolPlayers = toPlayers(ids, records);
+  const adapted = adaptRoundsForPool(completed, poolSet);
+  const withHistory = pair(poolPlayers, adapted, {
+    expectedRounds: MAX_ROUNDS,
+  });
 
   const expectedPairs = Math.floor(ids.length / 2);
-  if (withHistory.games.length >= expectedPairs) {
-    return withHistory.games.map((g) => ({ white: g.white, black: g.black }));
+  const poolGames = withHistory.games
+    .filter((g) => poolSet.has(g.white) && poolSet.has(g.black))
+    .map((g) => ({ white: g.white, black: g.black }));
+
+  if (poolGames.length >= expectedPairs) {
+    return poolGames;
   }
 
-  // Rematch wall inside the pool — keep same-record matches, allow rematches.
-  const fresh = pair(players, [], { expectedRounds: MAX_ROUNDS });
+  // Rare rematch lock inside the pool — same W–L only, allow rematches.
+  const fresh = pair(poolPlayers, [], { expectedRounds: MAX_ROUNDS });
   return fresh.games.map((g) => ({ white: g.white, black: g.black }));
 }
 
