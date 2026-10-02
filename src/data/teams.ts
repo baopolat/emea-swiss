@@ -45,15 +45,18 @@ export const TEAMS: Team[] = [
   { id: "ots", name: "Otter Side", short: "OTS", seed: 32, color: "#78716c", logo: "/logos/ots.png" },
 ];
 
-/** WSCI invite teams for Knockout Matches (not in Swiss Stage). */
+/**
+ * WSCI invite teams for Knockout Matches (not in Swiss Stage).
+ * Order = WSCI EMEA ranking (#1–#3); paired reverse vs Swiss advance seeds 16–14.
+ */
 export const INVITE_TEAMS: Team[] = [
   {
-    id: "mkf",
-    name: "Movistar KOI Fénix",
-    short: "MKF",
+    id: "gl",
+    name: "Galions",
+    short: "GL",
     seed: 101,
-    color: "#0ea5e9",
-    logo: "/logos/mkf.png",
+    color: "#a855f7",
+    logo: "/logos/gl.png",
   },
   {
     id: "sly",
@@ -64,15 +67,16 @@ export const INVITE_TEAMS: Team[] = [
     logo: "/logos/sly.png",
   },
   {
-    id: "gl",
-    name: "Galions",
-    short: "GL",
+    id: "mkf",
+    name: "Movistar KOI Fénix",
+    short: "MKF",
     seed: 103,
-    color: "#a855f7",
-    logo: "/logos/gl.png",
+    color: "#0ea5e9",
+    logo: "/logos/mkf.png",
   },
 ];
 
+/** WSCI #1–#3 in ranking order (Galions, Solary, MKOI Fénix). */
 export const INVITE_TEAM_IDS = INVITE_TEAMS.map((t) => t.id);
 
 /** Swiss + invite teams for match cards / Leaguepedia resolution. */

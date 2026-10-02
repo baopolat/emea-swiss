@@ -1,10 +1,5 @@
 export const DRAG_MIME = "application/x-emea-swap";
 
-export type KoDragPayload = {
-  kind: "ko";
-  matchId: string;
-};
-
 export type Ro16DragPayload = {
   kind: "ro16";
   slotKey: string;
@@ -17,10 +12,7 @@ export type PoolDragPayload = {
   pool: number;
 };
 
-export type SwapDragPayload =
-  | KoDragPayload
-  | Ro16DragPayload
-  | PoolDragPayload;
+export type SwapDragPayload = Ro16DragPayload | PoolDragPayload;
 
 export function writeDragPayload(
   e: React.DragEvent,

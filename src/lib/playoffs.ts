@@ -100,12 +100,18 @@ export function swissFullyResolved(standings: Standing[]): boolean {
   );
 }
 
+/**
+ * Fixed Knockout seats from the official sheet:
+ * 1.1 WSCI #1 vs Swiss #16 · 1.2 WSCI #2 vs Swiss #15 · 1.3 WSCI #3 vs Swiss #14.
+ * `swissIds` must be advance seeds 14–16 ascending.
+ */
 export function buildDefaultKoPairings(swissIds: string[]): KoPairing[] {
-  return swissIds.map((swissTeamId, i) => ({
+  const descending = [...swissIds].reverse();
+  return descending.map((swissTeamId, i) => ({
     matchId: `ko-${i + 1}`,
-    label: `KO ${i + 1}`,
+    label: `1.${i + 1}`,
     swissTeamId,
-    inviteTeamId: null,
+    inviteTeamId: INVITE_TEAM_IDS[i] ?? null,
   }));
 }
 
@@ -116,34 +122,6 @@ function shuffle<T>(items: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
-
-/** Assign invite teams randomly onto KO Swiss sides (fixed by seed order). */
-export function randomizeKnockoutInvites(
-  pairings: KoPairing[],
-  inviteIds: string[] = INVITE_TEAM_IDS,
-): KoPairing[] {
-  const shuffled = shuffle(inviteIds);
-  return pairings.map((p, i) => ({
-    ...p,
-    inviteTeamId: shuffled[i] ?? null,
-  }));
-}
-
-/** Swap invite teams between two KO matches. */
-export function swapKoInvites(
-  pairings: KoPairing[],
-  matchIdA: string,
-  matchIdB: string,
-): KoPairing[] {
-  const a = pairings.find((p) => p.matchId === matchIdA);
-  const b = pairings.find((p) => p.matchId === matchIdB);
-  if (!a || !b) return pairings;
-  return pairings.map((p) => {
-    if (p.matchId === matchIdA) return { ...p, inviteTeamId: b.inviteTeamId };
-    if (p.matchId === matchIdB) return { ...p, inviteTeamId: a.inviteTeamId };
-    return p;
-  });
 }
 
 export function koWinners(state: PostSwissState): string[] {
@@ -374,8 +352,8 @@ export function koMatchups(pairings: KoPairing[]): Matchup[] {
     .map((p) => ({
       id: p.matchId,
       label: p.label,
-      teamA: p.swissTeamId,
-      teamB: p.inviteTeamId!,
+      teamA: p.inviteTeamId!,
+      teamB: p.swissTeamId,
       pool: "ko",
     }));
 }
@@ -519,15 +497,22 @@ export function syncKoPairingsToSwiss(
   }
 
   const ids = koSwiss.map((s) => s.team.id);
+  const expected = buildDefaultKoPairings(ids);
   const same =
     state.koPairings.length === 3 &&
-    state.koPairings.every((p, i) => p.swissTeamId === ids[i]);
+    state.koPairings.every(
+      (p, i) =>
+        p.matchId === expected[i]?.matchId &&
+        p.swissTeamId === expected[i]?.swissTeamId &&
+        p.inviteTeamId === expected[i]?.inviteTeamId &&
+        p.label === expected[i]?.label,
+    );
 
   if (same) return state;
 
   return {
     ...emptyPostSwissState(),
-    koPairings: buildDefaultKoPairings(ids),
+    koPairings: expected,
   };
 }
 

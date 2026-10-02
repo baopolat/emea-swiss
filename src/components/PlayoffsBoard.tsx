@@ -6,7 +6,6 @@ import { KnockoutColumn } from "@/components/KnockoutColumn";
 import { PlayoffBracket } from "@/components/PlayoffBracket";
 import { PoolsPanel } from "@/components/PoolsPanel";
 import { SiteNav } from "@/components/SiteNav";
-import { INVITE_TEAM_IDS } from "@/data/teams";
 import { loadBoard, saveBoard } from "@/lib/boardStorage";
 import type { SwapDragPayload } from "@/lib/dragSwap";
 import {
@@ -27,9 +26,7 @@ import {
   knockoutSwissTeams,
   placePoolTeamInSlot,
   poolForRo16Slot,
-  randomizeKnockoutInvites,
   randomizeRo16Draw,
-  swapKoInvites,
   swapRo16Slots,
   syncKoPairingsToSwiss,
   unseatRo16Slot,
@@ -152,8 +149,7 @@ export function PlayoffsBoard() {
                 Knockout Matches
               </h2>
               <p className="mt-0.5 text-[11px] text-[#8b97ab]">
-                Seeds 14–16 vs WSCI invites · winners enter Pool 1 · drag invites
-                to swap
+                Fixed seats: WSCI #1–3 vs Swiss #16–14 · winners enter Pool 1
               </p>
             </div>
             <KnockoutColumn
@@ -161,39 +157,6 @@ export function PlayoffsBoard() {
               pairings={post.koPairings}
               results={post.koResults}
               officialGames={officialGames}
-              dragging={dragging}
-              onDragStart={(matchId) =>
-                setDragging({ kind: "ko", matchId })
-              }
-              onDragEnd={() => setDragging(null)}
-              onDropInvite={(targetMatchId, payload) => {
-                if (payload.matchId === targetMatchId) return;
-                updatePost((prev) =>
-                  clearFromRo16({
-                    ...prev,
-                    koPairings: swapKoInvites(
-                      prev.koPairings,
-                      payload.matchId,
-                      targetMatchId,
-                    ),
-                    koResults: {},
-                  }),
-                );
-                setDragging(null);
-              }}
-              onRandomize={() => {
-                updatePost((prev) =>
-                  clearFromRo16({
-                    ...prev,
-                    koPairings: randomizeKnockoutInvites(
-                      prev.koPairings,
-                      INVITE_TEAM_IDS,
-                    ),
-                    koResults: {},
-                  }),
-                );
-                setDragging(null);
-              }}
               onPick={(matchId, winnerId) => {
                 updatePost((prev) =>
                   clearFromRo16({

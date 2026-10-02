@@ -61,7 +61,7 @@ Undecided matches fill in automatically when new official winners appear.
 - Advancement seeding for identical records:
   1. **Progressive Score** (R1 win = 7 … R7 win = 1)
   2. Initial Swiss seed
-- **Knockout** (after Swiss): seeds 14–16 vs Movistar KOI Fénix, Solary, and Galions (Bo5). Randomize or swap invite seats; winners enter Playoffs Pool 1.
+- **Knockout** (after Swiss): fixed reverse seeding — Galions / Solary / MKOI Fénix (WSCI #1–3) vs Swiss advance seeds #16 / #15 / #14 (Bo5). Winners enter Playoffs Pool 1.
 - **Playoffs Ro16**: fixed pool draw (Pools 1–5 from Swiss records + KO winners). Randomize or swap within the same pool.
 - **QF → SF → Final**: fixed single-elim from Ro16 slot order (Bo5).
 - Leaguepedia sync covers Swiss, Knockout, and Playoff completed matches (green = match official, gold = diverge).
