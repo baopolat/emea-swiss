@@ -57,6 +57,16 @@ const TEAM_NAMES = {
     "GSMC",
   ],
   ots: ["Otter Side"],
+  mkf: [
+    "Movistar KOI Fénix",
+    "Movistar KOI Fenix",
+    "MKOI Fénix",
+    "MKOI Fenix",
+    "KOI Fénix",
+    "KOI Fenix",
+  ],
+  sly: ["Solary"],
+  gl: ["Galions"],
 };
 
 loadEnvFile(join(ROOT, ".env"));
@@ -197,13 +207,12 @@ function resolveTeamId(name, index) {
   return null;
 }
 
-function isSwissTab(tab) {
+function classifyTab(tab) {
   const t = String(tab ?? "").toLowerCase();
-  if (!t) return true;
-  if (/playoff|quarter|semi|final|bracket|knockout|lcq|last chance/i.test(t)) {
-    return false;
-  }
-  return true;
+  if (/lcq|last chance/i.test(t)) return null;
+  if (/knockout|\bko\b/i.test(t)) return "knockout";
+  if (/playoff|quarter|semi|final|bracket/i.test(t)) return "playoff";
+  return "swiss";
 }
 
 async function cargoQueryAll(fields, where) {
@@ -259,8 +268,9 @@ async function main() {
   const skipped = [];
 
   for (const row of rows) {
-    if (!isSwissTab(row.Tab)) {
-      skipped.push({ reason: "non-swiss-tab", tab: row.Tab, team1: row.Team1 });
+    const stage = classifyTab(row.Tab);
+    if (!stage) {
+      skipped.push({ reason: "excluded-tab", tab: row.Tab, team1: row.Team1 });
       continue;
     }
     if (String(row.IsTiebreaker) === "1") continue;
@@ -308,19 +318,25 @@ async function main() {
       teamAId: team1Id,
       teamBId: team2Id,
       winnerId,
+      stage,
       tab: row.Tab ?? null,
     });
   }
 
-  // Deduplicate by unordered pair (keep last)
+  // Prefer playoff > knockout > swiss when the same pair appears twice
+  const stageRank = { swiss: 1, knockout: 2, playoff: 3 };
   const byPair = new Map();
   for (const g of games) {
     const key = [g.teamAId, g.teamBId].sort().join("|");
-    byPair.set(key, {
-      teamAId: g.teamAId,
-      teamBId: g.teamBId,
-      winnerId: g.winnerId,
-    });
+    const prev = byPair.get(key);
+    if (!prev || stageRank[g.stage] >= stageRank[prev.stage ?? "swiss"]) {
+      byPair.set(key, {
+        teamAId: g.teamAId,
+        teamBId: g.teamBId,
+        winnerId: g.winnerId,
+        stage: g.stage,
+      });
+    }
   }
   const uniqueGames = [...byPair.values()];
 
@@ -334,7 +350,11 @@ async function main() {
 
   writeFileSync(OUT, JSON.stringify(payload, null, 2) + "\n");
   console.log("wrote", OUT);
-  console.log("unique swiss games:", uniqueGames.length);
+  console.log(
+    "unique games:",
+    uniqueGames.length,
+    `(swiss ${uniqueGames.filter((g) => g.stage === "swiss").length}, ko ${uniqueGames.filter((g) => g.stage === "knockout").length}, playoff ${uniqueGames.filter((g) => g.stage === "playoff").length})`,
+  );
   if (skipped.length) {
     console.warn("skipped", skipped.length, "rows (showing up to 12):");
     for (const s of skipped.slice(0, 12)) console.warn(" ", s);

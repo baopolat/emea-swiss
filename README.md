@@ -10,6 +10,7 @@ Round 1 is locked to the official Pool 0-0 pairings (seeds #1–#16 vs #17–#32
 2. Click a team on each match card to set the winner (green = win).
 3. When **every** match in a round has a result, the next round is paired with FIDE Dutch and appears as the next column.
 4. The **Final Result** column lists teams that reach 4 wins (advanced) or 4 losses (eliminated), ordered by Progressive Score then Swiss seed.
+5. After Swiss: open **Playoffs** for Knockout + the single-elim bracket.
 
 Layout mirrors majors.im-style Swiss boards: horizontal round columns, score-group pools (`1-0`, `0-1`, …), Bo1/Bo3 labels on pool headers.
 
@@ -37,9 +38,10 @@ npm run fetch-logos
 
 ## Official results
 
-Completed Swiss matches are pulled from Leaguepedia Cargo (`MatchSchedule`) for
+Completed matches are pulled from Leaguepedia Cargo (`MatchSchedule`) for
 **EMEA Masters/2026 Season/Summer Main Event** into
 [`src/data/official-results.json`](src/data/official-results.json).
+Swiss, Knockout, and Playoff tabs are included (tagged by stage).
 
 ```bash
 npm run fetch-results
@@ -59,3 +61,7 @@ Undecided matches fill in automatically when new official winners appear.
 - Advancement seeding for identical records:
   1. **Progressive Score** (R1 win = 7 … R7 win = 1)
   2. Initial Swiss seed
+- **Knockout** (after Swiss): seeds 14–16 vs Movistar KOI Fénix, Solary, and Galions (Bo5). Randomize or swap invite seats; winners enter Playoffs Pool 1.
+- **Playoffs Ro16**: fixed pool draw (Pools 1–5 from Swiss records + KO winners). Randomize or swap within the same pool.
+- **QF → SF → Final**: fixed single-elim from Ro16 slot order (Bo5).
+- Leaguepedia sync covers Swiss, Knockout, and Playoff completed matches (green = match official, gold = diverge).

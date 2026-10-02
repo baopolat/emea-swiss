@@ -1,4 +1,4 @@
-import type { OfficialGame } from "@/lib/official";
+import type { OfficialGame, OfficialStage } from "@/lib/official";
 
 export const OVERVIEW_PAGE = "EMEA Masters/2026 Season/Summer Main Event";
 const UA = "EMEA-Swiss-Calculator/1.0 (educational; official-results API)";
@@ -42,6 +42,16 @@ const TEAM_NAMES: Record<string, string[]> = {
     "GSMC",
   ],
   ots: ["Otter Side"],
+  mkf: [
+    "Movistar KOI Fénix",
+    "Movistar KOI Fenix",
+    "MKOI Fénix",
+    "MKOI Fenix",
+    "KOI Fénix",
+    "KOI Fenix",
+  ],
+  sly: ["Solary"],
+  gl: ["Galions"],
 };
 
 type CargoRow = Record<string, string | undefined>;
@@ -78,13 +88,13 @@ function resolveTeamId(
   return null;
 }
 
-function isSwissTab(tab: string | undefined): boolean {
+/** Classify MatchSchedule Tab into swiss / knockout / playoff. LCQ excluded. */
+export function classifyTab(tab: string | undefined): OfficialStage | null {
   const t = String(tab ?? "").toLowerCase();
-  if (!t) return true;
-  if (/playoff|quarter|semi|final|bracket|knockout|lcq|last chance/i.test(t)) {
-    return false;
-  }
-  return true;
+  if (/lcq|last chance/i.test(t)) return null;
+  if (/knockout|\bko\b/i.test(t)) return "knockout";
+  if (/playoff|quarter|semi|final|bracket/i.test(t)) return "playoff";
+  return "swiss";
 }
 
 function sleep(ms: number) {
@@ -222,7 +232,8 @@ export async function fetchLeaguepediaGames(): Promise<{
   const games: OfficialGame[] = [];
 
   for (const row of rows) {
-    if (!isSwissTab(row.Tab)) continue;
+    const stage = classifyTab(row.Tab);
+    if (!stage) continue;
     if (String(row.IsTiebreaker) === "1") continue;
 
     const team1Id = resolveTeamId(row.Team1, index);
@@ -250,17 +261,31 @@ export async function fetchLeaguepediaGames(): Promise<{
       teamAId: team1Id,
       teamBId: team2Id,
       winnerId,
+      stage,
     });
   }
 
+  // Prefer playoff > knockout > swiss when the same pair appears twice
+  const stageRank: Record<OfficialStage, number> = {
+    swiss: 1,
+    knockout: 2,
+    playoff: 3,
+  };
   const byPair = new Map<string, OfficialGame>();
   for (const g of games) {
     const key = [g.teamAId, g.teamBId].sort().join("|");
-    byPair.set(key, {
-      teamAId: g.teamAId,
-      teamBId: g.teamBId,
-      winnerId: g.winnerId,
-    });
+    const prev = byPair.get(key);
+    if (
+      !prev ||
+      stageRank[g.stage ?? "swiss"] >= stageRank[prev.stage ?? "swiss"]
+    ) {
+      byPair.set(key, {
+        teamAId: g.teamAId,
+        teamBId: g.teamBId,
+        winnerId: g.winnerId,
+        stage: g.stage,
+      });
+    }
   }
 
   return {

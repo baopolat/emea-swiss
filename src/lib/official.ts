@@ -1,15 +1,23 @@
 import officialData from "@/data/official-results.json";
 import { TEAM_BY_ID } from "@/data/teams";
 import {
+  mergeOfficialIntoPostSwiss,
+  type PostSwissState,
+} from "@/lib/playoffs";
+import {
   buildSwissSnapshot,
   type Matchup,
   type RoundResults,
 } from "@/lib/swiss";
 
+export type OfficialStage = "swiss" | "knockout" | "playoff";
+
 export type OfficialGame = {
   teamAId: string;
   teamBId: string;
   winnerId: string;
+  /** Omitted on older static cache entries → treated as swiss. */
+  stage?: OfficialStage;
 };
 
 export type OfficialResultsFile = {
@@ -31,6 +39,12 @@ export function pairKey(teamA: string, teamB: string): string {
   return [teamA, teamB].sort().join("|");
 }
 
+export function swissGames(
+  games: OfficialGame[] = OFFICIAL_GAMES,
+): OfficialGame[] {
+  return games.filter((g) => !g.stage || g.stage === "swiss");
+}
+
 export function winnerMapFromGames(
   games: OfficialGame[],
 ): Map<string, string> {
@@ -45,6 +59,7 @@ export function officialWinnerFor(
   teamB: string,
   games: OfficialGame[] = OFFICIAL_GAMES,
 ): string | undefined {
+  if (!teamA || !teamB) return undefined;
   return winnerMapFromGames(games).get(pairKey(teamA, teamB));
 }
 
@@ -63,13 +78,15 @@ export function isOfficialPick(
 /**
  * Walk FIDE Dutch pairings round-by-round and assign Leaguepedia winners
  * onto the matching team pairs (partial rounds allowed).
+ * Uses swiss-stage games only so KO/playoff pairs do not poison Swiss.
  */
 export function buildOfficialRounds(
   games: OfficialGame[] = OFFICIAL_GAMES,
 ): RoundResults[] {
-  if (!games.length) return [];
+  const swiss = swissGames(games);
+  if (!swiss.length) return [];
 
-  const byPair = winnerMapFromGames(games);
+  const byPair = winnerMapFromGames(swiss);
   const results: RoundResults[] = [];
 
   for (;;) {
@@ -91,7 +108,6 @@ export function buildOfficialRounds(
     if (hits === 0) break;
     results.push(roundRes);
 
-    // Stop once this round is incomplete — later pairings would diverge
     if (hits < matchups.length) break;
   }
 
@@ -124,9 +140,10 @@ export function mergeOfficialIntoUserResults(
   user: RoundResults[],
   games: OfficialGame[],
 ): RoundResults[] {
-  if (!games.length) return user.map((r) => ({ ...r }));
+  const swiss = swissGames(games);
+  if (!swiss.length) return user.map((r) => ({ ...r }));
 
-  const byPair = winnerMapFromGames(games);
+  const byPair = winnerMapFromGames(swiss);
   let results = user.map((r) => ({ ...r }));
 
   for (let guard = 0; guard < 8; guard++) {
@@ -153,13 +170,24 @@ export function mergeOfficialIntoUserResults(
   return results;
 }
 
+export function mergeOfficialPostSwiss(
+  state: PostSwissState,
+  games: OfficialGame[],
+): PostSwissState {
+  if (!games.length) return state;
+  return mergeOfficialIntoPostSwiss(state, winnerMapFromGames(games));
+}
+
 /** Higher seed = lower seed number. */
 export function higherSeedWinner(match: Matchup): string {
   const a = TEAM_BY_ID[match.teamA];
   const b = TEAM_BY_ID[match.teamB];
+  if (!a || !b) return match.teamA || match.teamB;
   return a.seed <= b.seed ? a.id : b.id;
 }
 
 export function randomWinner(match: Matchup): string {
+  if (!match.teamA) return match.teamB;
+  if (!match.teamB) return match.teamA;
   return Math.random() < 0.5 ? match.teamA : match.teamB;
 }

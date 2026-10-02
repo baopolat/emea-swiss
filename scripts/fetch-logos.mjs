@@ -93,6 +93,9 @@ const TEAMS = [
   ["su", "SU Esports"],
   ["gsmc", "Gamespace Mediterranean College Esports"],
   ["ots", "Otter Side"],
+  ["mkf", "Movistar KOI Fénix"],
+  ["sly", "Solary"],
+  ["gl", "Galions"],
 ];
 
 async function api(params, { method = "GET", body } = {}) {

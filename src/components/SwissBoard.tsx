@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MatchCard } from "@/components/MatchCard";
 import { FinalResultsColumn } from "@/components/FinalResultsColumn";
+import { MatchCard } from "@/components/MatchCard";
+import { SiteNav } from "@/components/SiteNav";
+import { loadBoard, saveBoard } from "@/lib/boardStorage";
 import { groupMatchupsByPool } from "@/lib/brackets";
 import {
   OFFICIAL_GAMES,
@@ -11,11 +14,18 @@ import {
   cloneOfficialRounds,
   higherSeedWinner,
   mergeOfficialIntoUserResults,
+  mergeOfficialPostSwiss,
   officialWinnerForMatch,
   randomWinner,
   type OfficialGame,
   type OfficialResultsFile,
 } from "@/lib/official";
+import {
+  emptyPostSwissState,
+  knockoutSwissTeams,
+  syncKoPairingsToSwiss,
+  type PostSwissState,
+} from "@/lib/playoffs";
 import {
   buildSwissSnapshot,
   isRoundComplete,
@@ -23,21 +33,9 @@ import {
   type RoundResults,
 } from "@/lib/swiss";
 
-const STORAGE_KEY = "emea-masters-swiss-summer-2026-v3";
-
-function loadResults(): RoundResults[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw == null) return cloneOfficialRounds();
-    const parsed = JSON.parse(raw) as RoundResults[];
-    return Array.isArray(parsed) ? parsed : cloneOfficialRounds();
-  } catch {
-    return cloneOfficialRounds();
-  }
-}
-
 export function SwissBoard() {
   const [results, setResults] = useState<RoundResults[] | null>(null);
+  const [post, setPost] = useState<PostSwissState | null>(null);
   const [officialGames, setOfficialGames] =
     useState<OfficialGame[]>(OFFICIAL_GAMES);
   const [officialSyncedAt, setOfficialSyncedAt] = useState<string | null>(
@@ -45,13 +43,15 @@ export function SwissBoard() {
   );
 
   useEffect(() => {
-    setResults(loadResults());
+    const board = loadBoard();
+    setResults(board.swiss);
+    setPost(board.post);
   }, []);
 
   useEffect(() => {
-    if (results === null) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
-  }, [results]);
+    if (results === null || post === null) return;
+    saveBoard({ swiss: results, post });
+  }, [results, post]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,11 +71,14 @@ export function SwissBoard() {
         setOfficialSyncedAt(data.fetchedAt ?? new Date().toISOString());
         setResults((prev) => {
           const base = prev ?? [];
-          // First visit / empty board → full official snapshot
           if (base.length === 0 && data.games.length > 0) {
             return cloneOfficialRounds(data.games);
           }
           return mergeOfficialIntoUserResults(base, data.games);
+        });
+        setPost((prev) => {
+          if (!prev) return prev;
+          return mergeOfficialPostSwiss(prev, data.games);
         });
       } catch (error) {
         console.warn("official results poll failed", error);
@@ -101,6 +104,12 @@ export function SwissBoard() {
       );
     }
   }, [results]);
+
+  useEffect(() => {
+    if (!snapshot || post === null) return;
+    const next = syncKoPairingsToSwiss(post, snapshot.advanced);
+    if (next !== post) setPost(next);
+  }, [snapshot, post]);
 
   const progressiveById = useMemo(() => {
     if (!snapshot) return {} as Record<string, number>;
@@ -129,6 +138,9 @@ export function SwissBoard() {
     };
   }, [snapshot, results]);
 
+  const playoffsReady =
+    !!snapshot && knockoutSwissTeams(snapshot.advanced).length >= 3;
+
   function setWinner(roundIndex: number, matchId: string, winnerId: string) {
     setResults((prev) => {
       const base = prev ?? [];
@@ -141,6 +153,7 @@ export function SwissBoard() {
       };
       return trimmed;
     });
+    setPost(emptyPostSwissState());
   }
 
   function clearWinner(roundIndex: number, matchId: string) {
@@ -153,14 +166,17 @@ export function SwissBoard() {
       trimmed[roundIndex] = copy;
       return trimmed;
     });
+    setPost(emptyPostSwissState());
   }
 
   function resetRound(roundIndex: number) {
     setResults((prev) => (prev ?? []).slice(0, roundIndex));
+    setPost(emptyPostSwissState());
   }
 
   function resetAll() {
     setResults(cloneOfficialRounds(officialGames));
+    setPost(emptyPostSwissState());
   }
 
   function fillRound(
@@ -180,14 +196,13 @@ export function SwissBoard() {
         changed = true;
       }
       if (!changed) return base;
-      // Keep prior rounds; drop later ones so pairings rebuild from this fill
       const trimmed = next.slice(0, roundIndex + 1);
       trimmed[roundIndex] = existing;
       return trimmed;
     });
+    setPost(emptyPostSwissState());
   }
 
-  /** Restore Leaguepedia winners for matches that have official results. */
   function fillOfficialRound(roundIndex: number, matchups: Matchup[]) {
     setResults((prev) => {
       const base = prev ?? [];
@@ -207,9 +222,10 @@ export function SwissBoard() {
       trimmed[roundIndex] = existing;
       return trimmed;
     });
+    setPost(emptyPostSwissState());
   }
 
-  if (results === null || snapshot === null) {
+  if (results === null || snapshot === null || post === null) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-[#8b97ab]">
         <div className="size-8 animate-pulse rounded-lg bg-[#2ecc71]/20" />
@@ -254,6 +270,15 @@ export function SwissBoard() {
                 />
               </div>
             )}
+            <SiteNav />
+            {playoffsReady && (
+              <Link
+                href="/playoffs"
+                className="hidden h-7 items-center rounded-md border border-[#d4a84b]/35 bg-[#1a150e] px-2.5 text-[10px] font-bold tracking-wide text-[#d4a84b] uppercase transition-colors hover:border-[#d4a84b]/55 sm:inline-flex"
+              >
+                Open Playoffs
+              </Link>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -278,7 +303,6 @@ export function SwissBoard() {
             const progress = matchups.length
               ? decided / matchups.length
               : 0;
-            // Wide 2-col layout for dense early rounds; keep width stable when R4+ appears
             const dense = matchups.length >= 10;
             const colWidth = dense ? "w-[340px]" : "w-[200px]";
 

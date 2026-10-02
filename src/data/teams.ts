@@ -45,8 +45,41 @@ export const TEAMS: Team[] = [
   { id: "ots", name: "Otter Side", short: "OTS", seed: 32, color: "#78716c", logo: "/logos/ots.png" },
 ];
 
+/** WSCI invite teams for Knockout Matches (not in Swiss Stage). */
+export const INVITE_TEAMS: Team[] = [
+  {
+    id: "mkf",
+    name: "Movistar KOI Fénix",
+    short: "MKF",
+    seed: 101,
+    color: "#0ea5e9",
+    logo: "/logos/mkf.png",
+  },
+  {
+    id: "sly",
+    name: "Solary",
+    short: "SLY",
+    seed: 102,
+    color: "#f97316",
+    logo: "/logos/sly.png",
+  },
+  {
+    id: "gl",
+    name: "Galions",
+    short: "GL",
+    seed: 103,
+    color: "#a855f7",
+    logo: "/logos/gl.png",
+  },
+];
+
+export const INVITE_TEAM_IDS = INVITE_TEAMS.map((t) => t.id);
+
+/** Swiss + invite teams for match cards / Leaguepedia resolution. */
+export const ALL_TEAMS: Team[] = [...TEAMS, ...INVITE_TEAMS];
+
 export const TEAM_BY_ID: Record<string, Team> = Object.fromEntries(
-  TEAMS.map((t) => [t.id, t]),
+  ALL_TEAMS.map((t) => [t.id, t]),
 );
 
 export const TEAM_BY_SEED: Record<number, Team> = Object.fromEntries(
