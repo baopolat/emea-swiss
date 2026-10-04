@@ -15,6 +15,7 @@ import {
   buildSwissSnapshot,
   type Matchup,
   type RoundResults,
+  type Standing,
 } from "@/lib/swiss";
 
 export type OfficialStage = "swiss" | "knockout" | "playoff";
@@ -235,12 +236,14 @@ export function mergeOfficialPostSwiss(
   state: PostSwissState,
   games: OfficialGame[],
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): PostSwissState {
   if (!games.length && !ro16Draw.length) return state;
   return mergeOfficialIntoPostSwiss(
     state,
     pairMapsFromGames(games),
     ro16Draw,
+    advanced,
   );
 }
 
@@ -259,10 +262,11 @@ export function fillOfficialBracketPostSwiss(
   state: PostSwissState,
   games: OfficialGame[],
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): PostSwissState {
   const byPair = winnerMapFromGames(playoffGames(games));
   if (!byPair.size && !ro16Draw.length) return state;
-  return fillOfficialBracket(state, byPair, ro16Draw);
+  return fillOfficialBracket(state, byPair, ro16Draw, advanced);
 }
 
 export function hasOfficialKnockout(
@@ -279,11 +283,13 @@ export function hasOfficialBracket(
   state: PostSwissState,
   games: OfficialGame[],
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): boolean {
   return bracketHasOfficial(
     state,
     winnerMapFromGames(playoffGames(games)),
     ro16Draw,
+    advanced,
   );
 }
 

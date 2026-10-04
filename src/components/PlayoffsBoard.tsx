@@ -98,7 +98,12 @@ export function PlayoffsBoard() {
     setPost((prev) => {
       if (!prev) return prev;
       const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
-      return mergeOfficialPostSwiss(synced, officialGames, ro16Draw);
+      return mergeOfficialPostSwiss(
+        synced,
+        officialGames,
+        ro16Draw,
+        snapshot.advanced,
+      );
     });
   }, [snapshot, officialGames, ro16Draw]);
 
@@ -266,7 +271,12 @@ export function PlayoffsBoard() {
                     >
                       Randomize rest
                     </button>
-                    {hasOfficialBracket(post, officialGames, ro16Draw) && (
+                    {hasOfficialBracket(
+                      post,
+                      officialGames,
+                      ro16Draw,
+                      snapshot?.advanced ?? [],
+                    ) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -275,6 +285,7 @@ export function PlayoffsBoard() {
                               prev,
                               officialGames,
                               ro16Draw,
+                              snapshot?.advanced ?? [],
                             ),
                           );
                         }}

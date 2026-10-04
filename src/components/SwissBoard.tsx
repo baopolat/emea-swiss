@@ -113,7 +113,12 @@ export function SwissBoard() {
     setPost((prev) => {
       if (!prev) return prev;
       const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
-      return mergeOfficialPostSwiss(synced, officialGames, ro16Draw);
+      return mergeOfficialPostSwiss(
+        synced,
+        officialGames,
+        ro16Draw,
+        snapshot.advanced,
+      );
     });
   }, [snapshot, officialGames, ro16Draw]);
 

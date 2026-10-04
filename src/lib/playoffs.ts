@@ -11,17 +11,17 @@ export type Ro16MatchDef = {
 };
 
 /**
- * Fixed Ro16 pool-vs-pool template from the official Leaguepedia draw
- * (MatchSchedule Tab "Round of 16", N_MatchInTab 1–8).
+ * Fixed Ro16 pool-vs-pool template matching the Leaguepedia bracket layout
+ * (not MatchSchedule date order). QF feeds: 1–2, 3–4, 5–6, 7–8.
  */
 export const RO16_MATCHES: Ro16MatchDef[] = [
   { id: "ro16-1", label: "Ro16 - 1", poolA: 1, poolB: 5 },
-  { id: "ro16-2", label: "Ro16 - 2", poolA: 1, poolB: 5 },
-  { id: "ro16-3", label: "Ro16 - 3", poolA: 3, poolB: 4 },
-  { id: "ro16-4", label: "Ro16 - 4", poolA: 1, poolB: 4 },
-  { id: "ro16-5", label: "Ro16 - 5", poolA: 3, poolB: 3 },
-  { id: "ro16-6", label: "Ro16 - 6", poolA: 2, poolB: 4 },
-  { id: "ro16-7", label: "Ro16 - 7", poolA: 2, poolB: 4 },
+  { id: "ro16-2", label: "Ro16 - 2", poolA: 3, poolB: 3 },
+  { id: "ro16-3", label: "Ro16 - 3", poolA: 2, poolB: 4 },
+  { id: "ro16-4", label: "Ro16 - 4", poolA: 2, poolB: 4 },
+  { id: "ro16-5", label: "Ro16 - 5", poolA: 1, poolB: 5 },
+  { id: "ro16-6", label: "Ro16 - 6", poolA: 3, poolB: 4 },
+  { id: "ro16-7", label: "Ro16 - 7", poolA: 1, poolB: 4 },
   { id: "ro16-8", label: "Ro16 - 8", poolA: 3, poolB: 4 },
 ];
 
@@ -526,32 +526,93 @@ export type OfficialPairMaps = {
   playoff: Map<string, string>;
 };
 
-/** Leaguepedia Round of 16 pairing (N_MatchInTab → slot). */
+/**
+ * Leaguepedia Round of 16 pairing.
+ * `matchIndex` is MatchSchedule order (by date), not bracket slot order.
+ */
 export type OfficialRo16Match = {
   matchIndex: number;
   teamAId: string;
   teamBId: string;
 };
 
-/** Map Leaguepedia Ro16 schedule rows onto bracket slot keys. */
+function poolIdForTeam(
+  pools: PlayoffPools,
+  teamId: string,
+): PlayoffPoolId | null {
+  for (const id of [1, 2, 3, 4, 5] as PlayoffPoolId[]) {
+    if (poolTeams(pools, id).includes(teamId)) return id;
+  }
+  return null;
+}
+
+function poolsMatchSlot(
+  poolX: PlayoffPoolId,
+  poolY: PlayoffPoolId,
+  def: Ro16MatchDef,
+): boolean {
+  return (
+    (poolX === def.poolA && poolY === def.poolB) ||
+    (poolX === def.poolB && poolY === def.poolA)
+  );
+}
+
+/**
+ * Map Leaguepedia Ro16 pairs onto bracket slots by pool template.
+ * Schedule `matchIndex` only breaks ties when multiple slots share the
+ * same pool-vs-pool pattern (processed in ascending schedule order).
+ */
 export function assignmentsFromOfficialDraw(
   draw: OfficialRo16Match[],
+  pools: PlayoffPools,
 ): Ro16Assignments {
   const next: Ro16Assignments = {};
-  for (const m of draw) {
-    if (!Number.isFinite(m.matchIndex)) continue;
-    const id = `ro16-${m.matchIndex}`;
-    if (!RO16_MATCHES.some((def) => def.id === id)) continue;
+  const filled = new Set<string>();
+  const ordered = [...draw].sort((a, b) => a.matchIndex - b.matchIndex);
+
+  for (const m of ordered) {
     if (!m.teamAId || !m.teamBId || m.teamAId === m.teamBId) continue;
-    next[slotKey(id, "a")] = m.teamAId;
-    next[slotKey(id, "b")] = m.teamBId;
+    const poolA = poolIdForTeam(pools, m.teamAId);
+    const poolB = poolIdForTeam(pools, m.teamBId);
+    if (poolA == null || poolB == null) continue;
+
+    const def = RO16_MATCHES.find(
+      (slot) => !filled.has(slot.id) && poolsMatchSlot(poolA, poolB, slot),
+    );
+    if (!def) continue;
+
+    // Orient sides to the slot's poolA / poolB (same-pool keeps Cargo order).
+    let sideA = m.teamAId;
+    let sideB = m.teamBId;
+    if (def.poolA !== def.poolB) {
+      if (poolA === def.poolB && poolB === def.poolA) {
+        sideA = m.teamBId;
+        sideB = m.teamAId;
+      }
+    }
+
+    next[slotKey(def.id, "a")] = sideA;
+    next[slotKey(def.id, "b")] = sideB;
+    filled.add(def.id);
   }
+
   return next;
 }
 
-export function officialRo16DrawComplete(draw: OfficialRo16Match[]): boolean {
-  const assignments = assignmentsFromOfficialDraw(draw);
-  return ro16FullyAssigned(assignments);
+export function officialRo16DrawComplete(
+  draw: OfficialRo16Match[],
+  pools?: PlayoffPools | null,
+): boolean {
+  if (draw.length < 8) return false;
+  const teams = new Set<string>();
+  for (const m of draw) {
+    if (!m.teamAId || !m.teamBId || m.teamAId === m.teamBId) return false;
+    teams.add(m.teamAId);
+    teams.add(m.teamBId);
+  }
+  if (teams.size !== 16) return false;
+  if (!pools) return true;
+  return ro16FullyAssigned(assignmentsFromOfficialDraw(draw, pools));
 }
 
 function assignmentsEqual(a: Ro16Assignments, b: Ro16Assignments): boolean {
@@ -563,20 +624,25 @@ function assignmentsEqual(a: Ro16Assignments, b: Ro16Assignments): boolean {
 }
 
 /**
- * Seat the official Ro16 draw. When `force` is false, only fills an empty board.
- * Clears later-round results when seats change.
+ * Seat the official Ro16 draw into bracket order (pool template).
+ * Syncs whenever the official seating differs so schedule-order mistakes
+ * self-heal. Clears later-round results when seats change.
  */
 export function applyOfficialRo16Draw(
   state: PostSwissState,
   draw: OfficialRo16Match[],
-  force = false,
+  advanced: Standing[],
+  _force = false,
 ): PostSwissState {
   if (!allKoDecided(state)) return state;
-  if (!officialRo16DrawComplete(draw)) return state;
-  if (!force && Object.keys(state.ro16Assignments).length > 0) return state;
+  const pools = buildPlayoffPools(advanced, koWinners(state));
+  if (!pools.sizesOk) return state;
+  if (!officialRo16DrawComplete(draw, pools)) return state;
 
-  const assignments = assignmentsFromOfficialDraw(draw);
+  const assignments = assignmentsFromOfficialDraw(draw, pools);
   if (assignmentsEqual(state.ro16Assignments, assignments)) return state;
+  // Published Leaguepedia bracket seating is source of truth
+  // (MatchSchedule date order ≠ bracket layout order).
   return clearFromQf({
     ...state,
     ro16Assignments: assignments,
@@ -588,13 +654,13 @@ export function applyOfficialRo16Draw(
  * Fill undecided post-Swiss results from official games (pair match).
  * Does not overwrite existing picks. Stage maps must already be filtered
  * so Swiss results cannot fill KO/playoff slots.
- * Auto-seats the Leaguepedia Ro16 draw when Knockout is decided and the
- * bracket is still empty.
+ * Seats the Leaguepedia Ro16 draw into the bracket pool template.
  */
 export function mergeOfficialIntoPostSwiss(
   state: PostSwissState,
   byStage: OfficialPairMaps,
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): PostSwissState {
   let next = { ...state };
   let changed = false;
@@ -625,7 +691,7 @@ export function mergeOfficialIntoPostSwiss(
 
   fill(koMatchups(next.koPairings), "koResults", byStage.knockout);
 
-  const drawn = applyOfficialRo16Draw(next, ro16Draw, false);
+  const drawn = applyOfficialRo16Draw(next, ro16Draw, advanced, false);
   if (drawn !== next) {
     next = drawn;
     changed = true;
@@ -692,11 +758,12 @@ export function fillOfficialBracket(
   state: PostSwissState,
   byPair: Map<string, string>,
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): PostSwissState {
   let next = state;
   let any = false;
 
-  const drawn = applyOfficialRo16Draw(next, ro16Draw, true);
+  const drawn = applyOfficialRo16Draw(next, ro16Draw, advanced, true);
   if (drawn !== next) {
     next = drawn;
     any = true;
@@ -756,10 +823,14 @@ export function bracketHasOfficial(
   state: PostSwissState,
   byPair: Map<string, string>,
   ro16Draw: OfficialRo16Match[] = [],
+  advanced: Standing[] = [],
 ): boolean {
-  if (officialRo16DrawComplete(ro16Draw)) {
-    const official = assignmentsFromOfficialDraw(ro16Draw);
-    if (!assignmentsEqual(state.ro16Assignments, official)) return true;
+  if (allKoDecided(state) && advanced.length > 0) {
+    const pools = buildPlayoffPools(advanced, koWinners(state));
+    if (officialRo16DrawComplete(ro16Draw, pools)) {
+      const official = assignmentsFromOfficialDraw(ro16Draw, pools);
+      if (!assignmentsEqual(state.ro16Assignments, official)) return true;
+    }
   }
   return (
     matchupsHaveOfficial(ro16Matchups(state.ro16Assignments), byPair) ||
