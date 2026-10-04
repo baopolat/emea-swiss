@@ -4,7 +4,7 @@ import { BracketMatch } from "@/components/BracketMatch";
 import { TeamLogo } from "@/components/MatchCard";
 import { TEAM_BY_ID } from "@/data/teams";
 import type { OfficialGame } from "@/lib/official";
-import { officialWinnerFor } from "@/lib/official";
+import { officialWinnerFor, playoffGames } from "@/lib/official";
 import {
   FINAL_MATCHES,
   QF_MATCHES,
@@ -66,6 +66,7 @@ export function PlayoffBracket({
   const qf = bracketMatchups(QF_MATCHES, post);
   const sf = bracketMatchups(SF_MATCHES, post);
   const finals = bracketMatchups(FINAL_MATCHES, post);
+  const poOfficial = playoffGames(officialGames);
   const championId = finals[0]
     ? post.finalResults[finals[0].id]?.winnerId
     : undefined;
@@ -121,7 +122,7 @@ export function PlayoffBracket({
                 teamAId={a}
                 teamBId={b}
                 result={post.ro16Results[m.id]}
-                officialWinnerId={officialWinnerFor(a, b, officialGames)}
+                officialWinnerId={officialWinnerFor(a, b, poOfficial)}
                 showPools
                 dragging={dragging}
                 dropHighlightA={isDropTarget(keyA)}
@@ -169,7 +170,7 @@ export function PlayoffBracket({
               officialWinnerId={officialWinnerFor(
                 m.teamA,
                 m.teamB,
-                officialGames,
+                poOfficial,
               )}
               onPick={(id) => onQfPick(m.id, id)}
               onClear={() => onQfClear(m.id)}
@@ -206,7 +207,7 @@ export function PlayoffBracket({
               officialWinnerId={officialWinnerFor(
                 m.teamA,
                 m.teamB,
-                officialGames,
+                poOfficial,
               )}
               onPick={(id) => onSfPick(m.id, id)}
               onClear={() => onSfClear(m.id)}
@@ -233,7 +234,7 @@ export function PlayoffBracket({
               officialWinnerId={officialWinnerFor(
                 m.teamA,
                 m.teamB,
-                officialGames,
+                poOfficial,
               )}
               onPick={(id) => onFinalPick(m.id, id)}
               onClear={() => onFinalClear(m.id)}

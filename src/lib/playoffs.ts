@@ -516,14 +516,21 @@ export function syncKoPairingsToSwiss(
   };
 }
 
+export type OfficialPairMaps = {
+  /** Knockout-stage pairs only — never Swiss rematches. */
+  knockout: Map<string, string>;
+  /** Playoff-stage pairs only — never Swiss/KO rematches. */
+  playoff: Map<string, string>;
+};
+
 /**
  * Fill undecided post-Swiss results from official games (pair match).
- * Does not overwrite existing picks. Clears later stages only implicitly
- * by not inventing winners — callers should not clear on merge.
+ * Does not overwrite existing picks. Stage maps must already be filtered
+ * so Swiss results cannot fill KO/playoff slots.
  */
 export function mergeOfficialIntoPostSwiss(
   state: PostSwissState,
-  byPair: Map<string, string>,
+  byStage: OfficialPairMaps,
 ): PostSwissState {
   let next = { ...state };
   let changed = false;
@@ -536,6 +543,7 @@ export function mergeOfficialIntoPostSwiss(
       | "qfResults"
       | "sfResults"
       | "finalResults",
+    byPair: Map<string, string>,
   ) {
     const results = { ...next[resultsKey] };
     for (const m of matchups) {
@@ -551,16 +559,133 @@ export function mergeOfficialIntoPostSwiss(
     next = { ...next, [resultsKey]: results };
   }
 
-  fill(koMatchups(next.koPairings), "koResults");
+  fill(koMatchups(next.koPairings), "koResults", byStage.knockout);
 
   if (allKoDecided(next) && Object.keys(next.ro16Assignments).length === 0) {
     // Don't auto-draw Ro16 from Leaguepedia — only fill winners once drawn
   }
 
-  fill(ro16Matchups(next.ro16Assignments), "ro16Results");
-  fill(bracketMatchups(QF_MATCHES, next), "qfResults");
-  fill(bracketMatchups(SF_MATCHES, next), "sfResults");
-  fill(bracketMatchups(FINAL_MATCHES, next), "finalResults");
+  fill(ro16Matchups(next.ro16Assignments), "ro16Results", byStage.playoff);
+  fill(bracketMatchups(QF_MATCHES, next), "qfResults", byStage.playoff);
+  fill(bracketMatchups(SF_MATCHES, next), "sfResults", byStage.playoff);
+  fill(bracketMatchups(FINAL_MATCHES, next), "finalResults", byStage.playoff);
 
   return changed ? next : state;
+}
+
+/** Overwrite results with official winners where the pair is known. */
+export function applyOfficialToResults(
+  matchups: Matchup[],
+  existing: Record<string, MatchResult>,
+  byPair: Map<string, string>,
+): { results: Record<string, MatchResult>; changed: boolean } {
+  const results = { ...existing };
+  let changed = false;
+  for (const m of matchups) {
+    if (!m.teamA || !m.teamB) continue;
+    const winnerId = byPair.get([m.teamA, m.teamB].sort().join("|"));
+    if (!winnerId || (winnerId !== m.teamA && winnerId !== m.teamB)) continue;
+    if (results[m.id]?.winnerId === winnerId) continue;
+    results[m.id] = { winnerId };
+    changed = true;
+  }
+  return { results, changed };
+}
+
+export function matchupsHaveOfficial(
+  matchups: Matchup[],
+  byPair: Map<string, string>,
+): boolean {
+  return matchups.some((m) => {
+    if (!m.teamA || !m.teamB) return false;
+    const winnerId = byPair.get([m.teamA, m.teamB].sort().join("|"));
+    return !!winnerId && (winnerId === m.teamA || winnerId === m.teamB);
+  });
+}
+
+/** Force-fill Knockout from official results; clears Ro16+ when anything changes. */
+export function fillOfficialKnockout(
+  state: PostSwissState,
+  byPair: Map<string, string>,
+): PostSwissState {
+  const { results, changed } = applyOfficialToResults(
+    koMatchups(state.koPairings),
+    state.koResults,
+    byPair,
+  );
+  if (!changed) return state;
+  return clearFromRo16({ ...state, koResults: results });
+}
+
+/**
+ * Force-fill Ro16 → Final from official results.
+ * Clears later rounds when an earlier round's winners change.
+ */
+export function fillOfficialBracket(
+  state: PostSwissState,
+  byPair: Map<string, string>,
+): PostSwissState {
+  let next = state;
+  let any = false;
+
+  const ro16 = applyOfficialToResults(
+    ro16Matchups(next.ro16Assignments),
+    next.ro16Results,
+    byPair,
+  );
+  if (ro16.changed) {
+    next = clearFromQf({ ...next, ro16Results: ro16.results });
+    any = true;
+  }
+
+  const qf = applyOfficialToResults(
+    bracketMatchups(QF_MATCHES, next),
+    next.qfResults,
+    byPair,
+  );
+  if (qf.changed) {
+    next = clearFromSf({ ...next, qfResults: qf.results });
+    any = true;
+  }
+
+  const sf = applyOfficialToResults(
+    bracketMatchups(SF_MATCHES, next),
+    next.sfResults,
+    byPair,
+  );
+  if (sf.changed) {
+    next = { ...next, sfResults: sf.results, finalResults: {} };
+    any = true;
+  }
+
+  const fin = applyOfficialToResults(
+    bracketMatchups(FINAL_MATCHES, next),
+    next.finalResults,
+    byPair,
+  );
+  if (fin.changed) {
+    next = { ...next, finalResults: fin.results };
+    any = true;
+  }
+
+  return any ? next : state;
+}
+
+export function knockoutHasOfficial(
+  state: PostSwissState,
+  byPair: Map<string, string>,
+): boolean {
+  return matchupsHaveOfficial(koMatchups(state.koPairings), byPair);
+}
+
+export function bracketHasOfficial(
+  state: PostSwissState,
+  byPair: Map<string, string>,
+): boolean {
+  return (
+    matchupsHaveOfficial(ro16Matchups(state.ro16Assignments), byPair) ||
+    matchupsHaveOfficial(bracketMatchups(QF_MATCHES, state), byPair) ||
+    matchupsHaveOfficial(bracketMatchups(SF_MATCHES, state), byPair) ||
+    matchupsHaveOfficial(bracketMatchups(FINAL_MATCHES, state), byPair)
+  );
 }

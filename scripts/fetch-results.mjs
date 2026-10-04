@@ -47,7 +47,7 @@ const TEAM_NAMES = {
   rud: ["Ruddy Corporation"],
   use: ["Unicorns of Love Sexy Edition"],
   bar: ["Barça eSports", "Barca eSports"],
-  ucam: ["UCAM Esports Club"],
+  ucam: ["UCAM Esports Club", "UCAM Esports", "UCAM Tokiers"],
   lds: ["LODIS", "LODIS (Polish Team)"],
   sc: ["Skillcamp"],
   su: ["SU Esports"],
@@ -215,6 +215,15 @@ function classifyTab(tab) {
   return "swiss";
 }
 
+function seriesComplete(bestOf, score1, score2) {
+  if (!Number.isFinite(score1) || !Number.isFinite(score2) || score1 === score2) {
+    return false;
+  }
+  const bo = Number(bestOf);
+  const need = Number.isFinite(bo) && bo > 0 ? Math.ceil(bo / 2) : 1;
+  return Math.max(score1, score2) >= need;
+}
+
 async function cargoQueryAll(fields, where) {
   const rows = [];
   let offset = 0;
@@ -243,7 +252,7 @@ async function main() {
 
   const fields =
     "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf,IsTiebreaker";
-  const where = `OverviewPage="${OVERVIEW_PAGE}" AND Winner IS NOT NULL AND (IsTiebreaker IS NULL OR IsTiebreaker != "1")`;
+  const where = `OverviewPage="${OVERVIEW_PAGE}" AND (IsTiebreaker IS NULL OR IsTiebreaker != "1") AND (Winner IS NOT NULL OR (Team1Score IS NOT NULL AND Team2Score IS NOT NULL))`;
 
   console.log("querying MatchSchedule for", OVERVIEW_PAGE);
   let rows;
@@ -255,11 +264,11 @@ async function main() {
     await sleep(1000);
     rows = await cargoQueryAll(
       "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf",
-      `OverviewPage="${OVERVIEW_PAGE}" AND Winner IS NOT NULL`,
+      `OverviewPage="${OVERVIEW_PAGE}" AND (Winner IS NOT NULL OR (Team1Score IS NOT NULL AND Team2Score IS NOT NULL))`,
     );
   }
 
-  console.log("raw completed matches:", rows.length);
+  console.log("raw scored/completed matches:", rows.length);
   const tabs = [...new Set(rows.map((r) => r.Tab).filter(Boolean))];
   console.log("tabs:", tabs.join(" | ") || "(none)");
 
@@ -287,21 +296,29 @@ async function main() {
       continue;
     }
 
+    const s1 = Number(row.Team1Score);
+    const s2 = Number(row.Team2Score);
+    const scoresComplete = seriesComplete(row.BestOf, s1, s2);
+
     // Winner is usually "1" or "2" (side), sometimes a team name
     let winnerId = null;
     const w = String(row.Winner ?? "").trim();
     if (w === "1") winnerId = team1Id;
     else if (w === "2") winnerId = team2Id;
-    else {
+    else if (w) {
       winnerId = resolveTeamId(w, index);
-      if (!winnerId) {
-        // Score fallback
-        const s1 = Number(row.Team1Score);
-        const s2 = Number(row.Team2Score);
-        if (Number.isFinite(s1) && Number.isFinite(s2) && s1 !== s2) {
-          winnerId = s1 > s2 ? team1Id : team2Id;
-        }
-      }
+    }
+    if (!winnerId && scoresComplete) {
+      winnerId = s1 > s2 ? team1Id : team2Id;
+    }
+    if (!winnerId && !scoresComplete) {
+      skipped.push({
+        reason: "in-progress",
+        team1: row.Team1,
+        team2: row.Team2,
+        score: `${row.Team1Score}-${row.Team2Score}`,
+      });
+      continue;
     }
 
     if (!winnerId || (winnerId !== team1Id && winnerId !== team2Id)) {

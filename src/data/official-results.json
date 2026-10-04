@@ -1,6 +1,25 @@
 {
-  "fetchedAt": "2026-09-26T16:10:24.994Z",
+  "fetchedAt": "2026-10-04T20:55:00.000Z",
   "overviewPage": "EMEA Masters/2026 Season/Summer Main Event",
-  "games": [],
+  "games": [
+    {
+      "teamAId": "gl",
+      "teamBId": "tsc",
+      "winnerId": "gl",
+      "stage": "knockout"
+    },
+    {
+      "teamAId": "sly",
+      "teamBId": "bar",
+      "winnerId": "sly",
+      "stage": "knockout"
+    },
+    {
+      "teamAId": "mkf",
+      "teamBId": "ucam",
+      "winnerId": "mkf",
+      "stage": "knockout"
+    }
+  ],
   "rounds": []
 }

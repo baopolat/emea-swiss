@@ -17,6 +17,7 @@ import {
   mergeOfficialPostSwiss,
   officialWinnerForMatch,
   randomWinner,
+  swissGames,
   type OfficialGame,
   type OfficialResultsFile,
 } from "@/lib/official";
@@ -76,10 +77,6 @@ export function SwissBoard() {
           }
           return mergeOfficialIntoUserResults(base, data.games);
         });
-        setPost((prev) => {
-          if (!prev) return prev;
-          return mergeOfficialPostSwiss(prev, data.games);
-        });
       } catch (error) {
         console.warn("official results poll failed", error);
       }
@@ -105,11 +102,15 @@ export function SwissBoard() {
     }
   }, [results]);
 
+  // Re-apply official KO winners after pairings sync (sync can wipe post-Swiss).
   useEffect(() => {
-    if (!snapshot || post === null) return;
-    const next = syncKoPairingsToSwiss(post, snapshot.advanced);
-    if (next !== post) setPost(next);
-  }, [snapshot, post]);
+    if (!snapshot) return;
+    setPost((prev) => {
+      if (!prev) return prev;
+      const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
+      return mergeOfficialPostSwiss(synced, officialGames);
+    });
+  }, [snapshot, officialGames]);
 
   const progressiveById = useMemo(() => {
     if (!snapshot) return {} as Record<string, number>;
@@ -204,6 +205,7 @@ export function SwissBoard() {
   }
 
   function fillOfficialRound(roundIndex: number, matchups: Matchup[]) {
+    const swissOfficial = swissGames(officialGames);
     setResults((prev) => {
       const base = prev ?? [];
       const next = base.map((r) => ({ ...r }));
@@ -211,7 +213,7 @@ export function SwissBoard() {
       const existing = { ...next[roundIndex] };
       let changed = false;
       for (const match of matchups) {
-        const official = officialWinnerForMatch(match, officialGames);
+        const official = officialWinnerForMatch(match, swissOfficial);
         if (!official) continue;
         if (existing[match.id]?.winnerId === official) continue;
         existing[match.id] = { winnerId: official };
@@ -233,6 +235,8 @@ export function SwissBoard() {
       </div>
     );
   }
+
+  const swissOfficial = swissGames(officialGames);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
@@ -360,7 +364,7 @@ export function SwissBoard() {
                       Higher seed
                     </button>
                     {matchups.some(
-                      (m) => officialWinnerForMatch(m, officialGames),
+                      (m) => officialWinnerForMatch(m, swissOfficial),
                     ) && (
                       <button
                         type="button"
@@ -407,7 +411,7 @@ export function SwissBoard() {
                             result={results[roundIndex]?.[match.id]}
                             officialWinnerId={officialWinnerForMatch(
                               match,
-                              officialGames,
+                              swissOfficial,
                             )}
                             progressiveA={progressiveById[match.teamA]}
                             progressiveB={progressiveById[match.teamB]}

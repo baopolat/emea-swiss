@@ -2,11 +2,15 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import staticOfficial from "@/data/official-results.json";
 import { fetchLeaguepediaGames, OVERVIEW_PAGE } from "@/lib/leaguepedia";
-import type { OfficialResultsFile } from "@/lib/official";
+import {
+  mergeOfficialGameLists,
+  type OfficialResultsFile,
+} from "@/lib/official";
 
 export const runtime = "nodejs";
 
 const POLL_SECONDS = 300;
+const staticFile = staticOfficial as OfficialResultsFile;
 
 const getCachedLeaguepedia = unstable_cache(
   async () => fetchLeaguepediaGames(),
@@ -17,10 +21,11 @@ const getCachedLeaguepedia = unstable_cache(
 export async function GET() {
   try {
     const live = await getCachedLeaguepedia();
+    const games = mergeOfficialGameLists(live.games, staticFile.games ?? []);
     const body: OfficialResultsFile & { source: string } = {
       fetchedAt: new Date().toISOString(),
       overviewPage: live.overviewPage,
-      games: live.games,
+      games,
       rounds: [],
       source: "leaguepedia",
     };
@@ -32,10 +37,9 @@ export async function GET() {
   } catch (error) {
     const message = error instanceof Error ? error.message : "fetch failed";
     console.error("official-results API:", message);
-    const fallback = staticOfficial as OfficialResultsFile;
     return NextResponse.json(
       {
-        ...fallback,
+        ...staticFile,
         source: "static",
         error: message,
       },

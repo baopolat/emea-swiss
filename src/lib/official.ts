@@ -1,6 +1,10 @@
 import officialData from "@/data/official-results.json";
 import { TEAM_BY_ID } from "@/data/teams";
 import {
+  bracketHasOfficial,
+  fillOfficialBracket,
+  fillOfficialKnockout,
+  knockoutHasOfficial,
   mergeOfficialIntoPostSwiss,
   type PostSwissState,
 } from "@/lib/playoffs";
@@ -39,10 +43,54 @@ export function pairKey(teamA: string, teamB: string): string {
   return [teamA, teamB].sort().join("|");
 }
 
+const STAGE_RANK: Record<OfficialStage, number> = {
+  swiss: 1,
+  knockout: 2,
+  playoff: 3,
+};
+
+/**
+ * Union live Leaguepedia games with the static cache.
+ * Live wins on the same pair; static-only pairs (e.g. fresh KO) are kept
+ * so a partial live payload cannot wipe known completed results.
+ */
+export function mergeOfficialGameLists(
+  live: OfficialGame[],
+  fallback: OfficialGame[],
+): OfficialGame[] {
+  const byPair = new Map<string, OfficialGame>();
+  for (const g of fallback) {
+    byPair.set(pairKey(g.teamAId, g.teamBId), g);
+  }
+  for (const g of live) {
+    const key = pairKey(g.teamAId, g.teamBId);
+    const prev = byPair.get(key);
+    if (
+      !prev ||
+      STAGE_RANK[g.stage ?? "swiss"] >= STAGE_RANK[prev.stage ?? "swiss"]
+    ) {
+      byPair.set(key, g);
+    }
+  }
+  return [...byPair.values()];
+}
+
 export function swissGames(
   games: OfficialGame[] = OFFICIAL_GAMES,
 ): OfficialGame[] {
   return games.filter((g) => !g.stage || g.stage === "swiss");
+}
+
+export function knockoutGames(
+  games: OfficialGame[] = OFFICIAL_GAMES,
+): OfficialGame[] {
+  return games.filter((g) => g.stage === "knockout");
+}
+
+export function playoffGames(
+  games: OfficialGame[] = OFFICIAL_GAMES,
+): OfficialGame[] {
+  return games.filter((g) => g.stage === "playoff");
 }
 
 export function winnerMapFromGames(
@@ -51,6 +99,13 @@ export function winnerMapFromGames(
   return new Map(
     games.map((g) => [pairKey(g.teamAId, g.teamBId), g.winnerId]),
   );
+}
+
+function pairMapsFromGames(games: OfficialGame[]) {
+  return {
+    knockout: winnerMapFromGames(knockoutGames(games)),
+    playoff: winnerMapFromGames(playoffGames(games)),
+  };
 }
 
 /** Official winner for a matchup pair, if Leaguepedia has a completed result. */
@@ -175,7 +230,44 @@ export function mergeOfficialPostSwiss(
   games: OfficialGame[],
 ): PostSwissState {
   if (!games.length) return state;
-  return mergeOfficialIntoPostSwiss(state, winnerMapFromGames(games));
+  return mergeOfficialIntoPostSwiss(state, pairMapsFromGames(games));
+}
+
+/** Official button: overwrite Knockout picks from knockout-stage results only. */
+export function fillOfficialKnockoutPostSwiss(
+  state: PostSwissState,
+  games: OfficialGame[],
+): PostSwissState {
+  const byPair = winnerMapFromGames(knockoutGames(games));
+  if (!byPair.size) return state;
+  return fillOfficialKnockout(state, byPair);
+}
+
+/** Official button: overwrite Ro16–Final from playoff-stage results only. */
+export function fillOfficialBracketPostSwiss(
+  state: PostSwissState,
+  games: OfficialGame[],
+): PostSwissState {
+  const byPair = winnerMapFromGames(playoffGames(games));
+  if (!byPair.size) return state;
+  return fillOfficialBracket(state, byPair);
+}
+
+export function hasOfficialKnockout(
+  state: PostSwissState,
+  games: OfficialGame[],
+): boolean {
+  return knockoutHasOfficial(
+    state,
+    winnerMapFromGames(knockoutGames(games)),
+  );
+}
+
+export function hasOfficialBracket(
+  state: PostSwissState,
+  games: OfficialGame[],
+): boolean {
+  return bracketHasOfficial(state, winnerMapFromGames(playoffGames(games)));
 }
 
 /** Higher seed = lower seed number. */

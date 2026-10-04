@@ -32,7 +32,7 @@ const TEAM_NAMES: Record<string, string[]> = {
   rud: ["Ruddy Corporation"],
   use: ["Unicorns of Love Sexy Edition"],
   bar: ["Barça eSports", "Barca eSports"],
-  ucam: ["UCAM Esports Club"],
+  ucam: ["UCAM Esports Club", "UCAM Esports", "UCAM Tokiers"],
   lds: ["LODIS", "LODIS (Polish Team)"],
   sc: ["Skillcamp"],
   su: ["SU Esports"],
@@ -95,6 +95,20 @@ export function classifyTab(tab: string | undefined): OfficialStage | null {
   if (/knockout|\bko\b/i.test(t)) return "knockout";
   if (/playoff|quarter|semi|final|bracket/i.test(t)) return "playoff";
   return "swiss";
+}
+
+/** True when series scores reach the wins needed for BestOf (ignores mid-series). */
+export function seriesComplete(
+  bestOf: string | number | undefined,
+  score1: number,
+  score2: number,
+): boolean {
+  if (!Number.isFinite(score1) || !Number.isFinite(score2) || score1 === score2) {
+    return false;
+  }
+  const bo = Number(bestOf);
+  const need = Number.isFinite(bo) && bo > 0 ? Math.ceil(bo / 2) : 1;
+  return Math.max(score1, score2) >= need;
 }
 
 function sleep(ms: number) {
@@ -215,7 +229,8 @@ export async function fetchLeaguepediaGames(): Promise<{
 
   const fields =
     "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf,IsTiebreaker";
-  const where = `OverviewPage="${OVERVIEW_PAGE}" AND Winner IS NOT NULL AND (IsTiebreaker IS NULL OR IsTiebreaker != "1")`;
+  // Include score-complete series even when Winner is still empty on Cargo.
+  const where = `OverviewPage="${OVERVIEW_PAGE}" AND (IsTiebreaker IS NULL OR IsTiebreaker != "1") AND (Winner IS NOT NULL OR (Team1Score IS NOT NULL AND Team2Score IS NOT NULL))`;
 
   let rows: CargoRow[];
   try {
@@ -224,7 +239,7 @@ export async function fetchLeaguepediaGames(): Promise<{
     await sleep(500);
     rows = await cargoQueryAll(
       "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf",
-      `OverviewPage="${OVERVIEW_PAGE}" AND Winner IS NOT NULL`,
+      `OverviewPage="${OVERVIEW_PAGE}" AND (Winner IS NOT NULL OR (Team1Score IS NOT NULL AND Team2Score IS NOT NULL))`,
     );
   }
 
@@ -240,20 +255,22 @@ export async function fetchLeaguepediaGames(): Promise<{
     const team2Id = resolveTeamId(row.Team2, index);
     if (!team1Id || !team2Id) continue;
 
+    const s1 = Number(row.Team1Score);
+    const s2 = Number(row.Team2Score);
+    const scoresComplete = seriesComplete(row.BestOf, s1, s2);
+
     let winnerId: string | null = null;
     const w = String(row.Winner ?? "").trim();
     if (w === "1") winnerId = team1Id;
     else if (w === "2") winnerId = team2Id;
-    else {
+    else if (w) {
       winnerId = resolveTeamId(w, index);
-      if (!winnerId) {
-        const s1 = Number(row.Team1Score);
-        const s2 = Number(row.Team2Score);
-        if (Number.isFinite(s1) && Number.isFinite(s2) && s1 !== s2) {
-          winnerId = s1 > s2 ? team1Id : team2Id;
-        }
-      }
     }
+    if (!winnerId && scoresComplete) {
+      winnerId = s1 > s2 ? team1Id : team2Id;
+    }
+    // Skip in-progress series with no Winner field.
+    if (!winnerId && !scoresComplete) continue;
 
     if (!winnerId || (winnerId !== team1Id && winnerId !== team2Id)) continue;
 

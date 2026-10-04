@@ -11,6 +11,9 @@ import type { SwapDragPayload } from "@/lib/dragSwap";
 import {
   OFFICIAL_GAMES,
   OFFICIAL_POLL_MS,
+  fillOfficialBracketPostSwiss,
+  fillOfficialKnockoutPostSwiss,
+  hasOfficialBracket,
   mergeOfficialPostSwiss,
   type OfficialGame,
   type OfficialResultsFile,
@@ -62,9 +65,6 @@ export function PlayoffsBoard() {
         const data = (await res.json()) as OfficialResultsFile;
         if (cancelled || !Array.isArray(data.games)) return;
         setOfficialGames(data.games);
-        setPost((prev) =>
-          prev ? mergeOfficialPostSwiss(prev, data.games) : prev,
-        );
       } catch (error) {
         console.warn("official results poll failed", error);
       }
@@ -86,11 +86,16 @@ export function PlayoffsBoard() {
     }
   }, [swiss]);
 
+  // Re-apply official KO/playoff winners whenever pairings or live games change.
+  // Pairings sync can reset post-Swiss state; merge must run after that.
   useEffect(() => {
-    if (!snapshot || post === null) return;
-    const next = syncKoPairingsToSwiss(post, snapshot.advanced);
-    if (next !== post) setPost(next);
-  }, [snapshot, post]);
+    if (!snapshot) return;
+    setPost((prev) => {
+      if (!prev) return prev;
+      const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
+      return mergeOfficialPostSwiss(synced, officialGames);
+    });
+  }, [snapshot, officialGames]);
 
   const koReady =
     !!snapshot && knockoutSwissTeams(snapshot.advanced).length >= 3;
@@ -180,6 +185,11 @@ export function PlayoffsBoard() {
                   clearFromRo16({ ...prev, koResults: {} }),
                 );
               }}
+              onFillOfficial={() => {
+                updatePost((prev) =>
+                  fillOfficialKnockoutPostSwiss(prev, officialGames),
+                );
+              }}
             />
           </section>
 
@@ -251,6 +261,19 @@ export function PlayoffsBoard() {
                     >
                       Randomize rest
                     </button>
+                    {hasOfficialBracket(post, officialGames) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updatePost((prev) =>
+                            fillOfficialBracketPostSwiss(prev, officialGames),
+                          );
+                        }}
+                        className="rounded border border-[#2ecc71]/30 bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#2ecc71] transition-colors hover:border-[#2ecc71]/55 hover:bg-[#0f1a14] hover:text-[#3dd68c]"
+                      >
+                        Official
+                      </button>
+                    )}
                     {Object.keys(post.ro16Assignments).length > 0 && (
                       <button
                         type="button"

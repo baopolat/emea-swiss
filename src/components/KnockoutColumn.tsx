@@ -2,7 +2,7 @@
 
 import { MatchCard } from "@/components/MatchCard";
 import type { OfficialGame } from "@/lib/official";
-import { officialWinnerForMatch } from "@/lib/official";
+import { knockoutGames, officialWinnerForMatch } from "@/lib/official";
 import { type KoPairing } from "@/lib/playoffs";
 import type { MatchResult } from "@/lib/swiss";
 
@@ -13,6 +13,7 @@ type KnockoutColumnProps = {
   onPick: (matchId: string, winnerId: string) => void;
   onClear: (matchId: string) => void;
   onClearResults: () => void;
+  onFillOfficial?: () => void;
   horizontal?: boolean;
 };
 
@@ -23,10 +24,12 @@ export function KnockoutColumn({
   onPick,
   onClear,
   onClearResults,
+  onFillOfficial,
   horizontal = false,
 }: KnockoutColumnProps) {
   const decided = pairings.filter((p) => results[p.matchId]).length;
   const complete = pairings.length === 3 && decided === 3;
+  const koOfficial = knockoutGames(officialGames);
 
   const display = pairings.map((p) => ({
     id: p.matchId,
@@ -35,6 +38,10 @@ export function KnockoutColumn({
     teamB: p.swissTeamId,
     pool: "ko",
   }));
+
+  const hasOfficial = display.some((m) =>
+    officialWinnerForMatch(m, koOfficial),
+  );
 
   const toolbar = (
     <div className="flex flex-wrap items-center gap-1">
@@ -47,6 +54,15 @@ export function KnockoutColumn({
       >
         {decided}/3
       </span>
+      {hasOfficial && onFillOfficial && (
+        <button
+          type="button"
+          onClick={onFillOfficial}
+          className="rounded border border-[#2ecc71]/30 bg-[#121820] px-1.5 py-0.5 text-[9px] font-semibold text-[#2ecc71] transition-colors hover:border-[#2ecc71]/55 hover:bg-[#0f1a14] hover:text-[#3dd68c]"
+        >
+          Official
+        </button>
+      )}
       {decided > 0 && (
         <button
           type="button"
@@ -74,7 +90,7 @@ export function KnockoutColumn({
         result={results[match.id]}
         format="Bo5"
         placeholderA="WSCI"
-        officialWinnerId={officialWinnerForMatch(match, officialGames)}
+        officialWinnerId={officialWinnerForMatch(match, koOfficial)}
         onPick={(winnerId) => onPick(match.id, winnerId)}
         onClear={() => onClear(match.id)}
       />
