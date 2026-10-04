@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-10-04T20:55:00.000Z",
+  "fetchedAt": "2026-10-05T00:50:00.000Z",
   "overviewPage": "EMEA Masters/2026 Season/Summer Main Event",
   "games": [
     {
@@ -20,6 +20,16 @@
       "winnerId": "mkf",
       "stage": "knockout"
     }
+  ],
+  "ro16Draw": [
+    { "matchIndex": 1, "teamAId": "sly", "teamBId": "vlr" },
+    { "matchIndex": 2, "teamAId": "mkf", "teamBId": "fec" },
+    { "matchIndex": 3, "teamAId": "tln", "teamBId": "bw" },
+    { "matchIndex": 4, "teamAId": "gl", "teamBId": "big" },
+    { "matchIndex": 5, "teamAId": "hrts", "teamBId": "g2n" },
+    { "matchIndex": 6, "teamAId": "kcb", "teamBId": "sc" },
+    { "matchIndex": 7, "teamAId": "anb", "teamBId": "rud" },
+    { "matchIndex": 8, "teamAId": "khk", "teamBId": "use" }
   ],
   "rounds": []
 }

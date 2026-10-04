@@ -1,4 +1,8 @@
-import type { OfficialGame, OfficialStage } from "@/lib/official";
+import type {
+  OfficialGame,
+  OfficialRo16Match,
+  OfficialStage,
+} from "@/lib/official";
 
 export const OVERVIEW_PAGE = "EMEA Masters/2026 Season/Summer Main Event";
 const UA = "EMEA-Swiss-Calculator/1.0 (educational; official-results API)";
@@ -93,8 +97,25 @@ export function classifyTab(tab: string | undefined): OfficialStage | null {
   const t = String(tab ?? "").toLowerCase();
   if (/lcq|last chance/i.test(t)) return null;
   if (/knockout|\bko\b/i.test(t)) return "knockout";
-  if (/playoff|quarter|semi|final|bracket/i.test(t)) return "playoff";
+  if (
+    /playoff|quarter|semi|final|bracket|round of 16|ro16|round of sixteen/i.test(
+      t,
+    )
+  ) {
+    return "playoff";
+  }
   return "swiss";
+}
+
+function cargoField(
+  row: CargoRow,
+  ...keys: string[]
+): string | undefined {
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") return String(value);
+  }
+  return undefined;
 }
 
 /** True when series scores reach the wins needed for BestOf (ignores mid-series). */
@@ -117,6 +138,7 @@ function sleep(ms: number) {
 
 export async function fetchLeaguepediaGames(): Promise<{
   games: OfficialGame[];
+  ro16Draw: OfficialRo16Match[];
   overviewPage: string;
 }> {
   const cookieJar = new Map<string, string>();
@@ -243,6 +265,19 @@ export async function fetchLeaguepediaGames(): Promise<{
     );
   }
 
+  // Scheduled Round of 16 pairings (draw) — Team1/Team2 filled, scores optional.
+  let drawRows: CargoRow[] = [];
+  try {
+    await sleep(400);
+    drawRows = await cargoQueryAll(
+      "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf,N_MatchInTab",
+      `OverviewPage="${OVERVIEW_PAGE}" AND Tab="Round of 16" AND Team1 IS NOT NULL AND Team2 IS NOT NULL AND Team1 != "" AND Team2 != ""`,
+    );
+  } catch {
+    // Draw is optional; completed games still useful without it.
+    drawRows = [];
+  }
+
   const index = buildNameIndex();
   const games: OfficialGame[] = [];
 
@@ -282,6 +317,25 @@ export async function fetchLeaguepediaGames(): Promise<{
     });
   }
 
+  const ro16Draw: OfficialRo16Match[] = [];
+  for (const row of drawRows) {
+    const team1Id = resolveTeamId(row.Team1, index);
+    const team2Id = resolveTeamId(row.Team2, index);
+    if (!team1Id || !team2Id) continue;
+    const matchIndex = Number(
+      cargoField(row, "N_MatchInTab", "N MatchInTab"),
+    );
+    if (!Number.isFinite(matchIndex) || matchIndex < 1 || matchIndex > 8) {
+      continue;
+    }
+    ro16Draw.push({
+      matchIndex,
+      teamAId: team1Id,
+      teamBId: team2Id,
+    });
+  }
+  ro16Draw.sort((a, b) => a.matchIndex - b.matchIndex);
+
   // Prefer playoff > knockout > swiss when the same pair appears twice
   const stageRank: Record<OfficialStage, number> = {
     swiss: 1,
@@ -308,5 +362,6 @@ export async function fetchLeaguepediaGames(): Promise<{
   return {
     overviewPage: OVERVIEW_PAGE,
     games: [...byPair.values()],
+    ro16Draw,
   };
 }

@@ -211,8 +211,22 @@ function classifyTab(tab) {
   const t = String(tab ?? "").toLowerCase();
   if (/lcq|last chance/i.test(t)) return null;
   if (/knockout|\bko\b/i.test(t)) return "knockout";
-  if (/playoff|quarter|semi|final|bracket/i.test(t)) return "playoff";
+  if (
+    /playoff|quarter|semi|final|bracket|round of 16|ro16|round of sixteen/i.test(
+      t,
+    )
+  ) {
+    return "playoff";
+  }
   return "swiss";
+}
+
+function cargoField(row, ...keys) {
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") return String(value);
+  }
+  return undefined;
 }
 
 function seriesComplete(bestOf, score1, score2) {
@@ -271,6 +285,18 @@ async function main() {
   console.log("raw scored/completed matches:", rows.length);
   const tabs = [...new Set(rows.map((r) => r.Tab).filter(Boolean))];
   console.log("tabs:", tabs.join(" | ") || "(none)");
+
+  await sleep(500);
+  let drawRows = [];
+  try {
+    drawRows = await cargoQueryAll(
+      "Team1,Team2,Team1Score,Team2Score,Winner,Tab,BestOf,N_MatchInTab",
+      `OverviewPage="${OVERVIEW_PAGE}" AND Tab="Round of 16" AND Team1 IS NOT NULL AND Team2 IS NOT NULL AND Team1 != "" AND Team2 != ""`,
+    );
+    console.log("Round of 16 schedule rows:", drawRows.length);
+  } catch (err) {
+    console.warn("Ro16 draw query failed:", err.message);
+  }
 
   const index = buildNameIndex();
   const games = [];
@@ -357,10 +383,39 @@ async function main() {
   }
   const uniqueGames = [...byPair.values()];
 
+  const ro16Draw = [];
+  for (const row of drawRows) {
+    const team1Id = resolveTeamId(row.Team1, index);
+    const team2Id = resolveTeamId(row.Team2, index);
+    if (!team1Id || !team2Id) {
+      skipped.push({
+        reason: "unmapped-ro16",
+        team1: row.Team1,
+        team2: row.Team2,
+      });
+      continue;
+    }
+    const matchIndex = Number(
+      cargoField(row, "N_MatchInTab", "N MatchInTab"),
+    );
+    if (!Number.isFinite(matchIndex) || matchIndex < 1 || matchIndex > 8) {
+      skipped.push({
+        reason: "bad-ro16-index",
+        team1: row.Team1,
+        team2: row.Team2,
+        index: cargoField(row, "N_MatchInTab", "N MatchInTab"),
+      });
+      continue;
+    }
+    ro16Draw.push({ matchIndex, teamAId: team1Id, teamBId: team2Id });
+  }
+  ro16Draw.sort((a, b) => a.matchIndex - b.matchIndex);
+
   const payload = {
     fetchedAt: new Date().toISOString(),
     overviewPage: OVERVIEW_PAGE,
     games: uniqueGames,
+    ro16Draw,
     // rounds are derived at runtime in src/lib/official.ts via FIDE Dutch
     rounds: [],
   };
@@ -371,6 +426,11 @@ async function main() {
     "unique games:",
     uniqueGames.length,
     `(swiss ${uniqueGames.filter((g) => g.stage === "swiss").length}, ko ${uniqueGames.filter((g) => g.stage === "knockout").length}, playoff ${uniqueGames.filter((g) => g.stage === "playoff").length})`,
+  );
+  console.log(
+    "ro16 draw:",
+    ro16Draw.length,
+    ro16Draw.map((m) => `${m.matchIndex}:${m.teamAId}vs${m.teamBId}`).join(" "),
   );
   if (skipped.length) {
     console.warn("skipped", skipped.length, "rows (showing up to 12):");

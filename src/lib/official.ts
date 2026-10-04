@@ -6,8 +6,11 @@ import {
   fillOfficialKnockout,
   knockoutHasOfficial,
   mergeOfficialIntoPostSwiss,
+  type OfficialRo16Match,
   type PostSwissState,
 } from "@/lib/playoffs";
+
+export type { OfficialRo16Match };
 import {
   buildSwissSnapshot,
   type Matchup,
@@ -28,6 +31,8 @@ export type OfficialResultsFile = {
   fetchedAt: string;
   overviewPage: string;
   games: OfficialGame[];
+  /** Scheduled Round of 16 pairings from Leaguepedia (may be unscored). */
+  ro16Draw?: OfficialRo16Match[];
   rounds?: RoundResults[];
 };
 
@@ -36,6 +41,7 @@ const data = officialData as OfficialResultsFile;
 export const OFFICIAL_OVERVIEW_PAGE = data.overviewPage;
 export const OFFICIAL_FETCHED_AT = data.fetchedAt;
 export const OFFICIAL_GAMES: OfficialGame[] = data.games ?? [];
+export const OFFICIAL_RO16_DRAW: OfficialRo16Match[] = data.ro16Draw ?? [];
 
 export const OFFICIAL_POLL_MS = 5 * 60 * 1000;
 
@@ -228,9 +234,14 @@ export function mergeOfficialIntoUserResults(
 export function mergeOfficialPostSwiss(
   state: PostSwissState,
   games: OfficialGame[],
+  ro16Draw: OfficialRo16Match[] = [],
 ): PostSwissState {
-  if (!games.length) return state;
-  return mergeOfficialIntoPostSwiss(state, pairMapsFromGames(games));
+  if (!games.length && !ro16Draw.length) return state;
+  return mergeOfficialIntoPostSwiss(
+    state,
+    pairMapsFromGames(games),
+    ro16Draw,
+  );
 }
 
 /** Official button: overwrite Knockout picks from knockout-stage results only. */
@@ -243,14 +254,15 @@ export function fillOfficialKnockoutPostSwiss(
   return fillOfficialKnockout(state, byPair);
 }
 
-/** Official button: overwrite Ro16–Final from playoff-stage results only. */
+/** Official button: reseat Ro16 draw + overwrite Ro16–Final results. */
 export function fillOfficialBracketPostSwiss(
   state: PostSwissState,
   games: OfficialGame[],
+  ro16Draw: OfficialRo16Match[] = [],
 ): PostSwissState {
   const byPair = winnerMapFromGames(playoffGames(games));
-  if (!byPair.size) return state;
-  return fillOfficialBracket(state, byPair);
+  if (!byPair.size && !ro16Draw.length) return state;
+  return fillOfficialBracket(state, byPair, ro16Draw);
 }
 
 export function hasOfficialKnockout(
@@ -266,8 +278,13 @@ export function hasOfficialKnockout(
 export function hasOfficialBracket(
   state: PostSwissState,
   games: OfficialGame[],
+  ro16Draw: OfficialRo16Match[] = [],
 ): boolean {
-  return bracketHasOfficial(state, winnerMapFromGames(playoffGames(games)));
+  return bracketHasOfficial(
+    state,
+    winnerMapFromGames(playoffGames(games)),
+    ro16Draw,
+  );
 }
 
 /** Higher seed = lower seed number. */

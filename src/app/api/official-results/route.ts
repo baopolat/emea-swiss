@@ -22,10 +22,15 @@ export async function GET() {
   try {
     const live = await getCachedLeaguepedia();
     const games = mergeOfficialGameLists(live.games, staticFile.games ?? []);
+    const ro16Draw =
+      live.ro16Draw?.length >= 8
+        ? live.ro16Draw
+        : (staticFile.ro16Draw ?? live.ro16Draw ?? []);
     const body: OfficialResultsFile & { source: string } = {
       fetchedAt: new Date().toISOString(),
       overviewPage: live.overviewPage,
       games,
+      ro16Draw,
       rounds: [],
       source: "leaguepedia",
     };

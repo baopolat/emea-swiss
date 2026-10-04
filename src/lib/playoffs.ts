@@ -10,15 +10,18 @@ export type Ro16MatchDef = {
   poolB: PlayoffPoolId;
 };
 
-/** Fixed Ro16 pool-vs-pool template from the official draw sheet. */
+/**
+ * Fixed Ro16 pool-vs-pool template from the official Leaguepedia draw
+ * (MatchSchedule Tab "Round of 16", N_MatchInTab 1–8).
+ */
 export const RO16_MATCHES: Ro16MatchDef[] = [
   { id: "ro16-1", label: "Ro16 - 1", poolA: 1, poolB: 5 },
-  { id: "ro16-2", label: "Ro16 - 2", poolA: 3, poolB: 3 },
-  { id: "ro16-3", label: "Ro16 - 3", poolA: 2, poolB: 4 },
-  { id: "ro16-4", label: "Ro16 - 4", poolA: 2, poolB: 4 },
-  { id: "ro16-5", label: "Ro16 - 5", poolA: 1, poolB: 5 },
-  { id: "ro16-6", label: "Ro16 - 6", poolA: 3, poolB: 4 },
-  { id: "ro16-7", label: "Ro16 - 7", poolA: 1, poolB: 4 },
+  { id: "ro16-2", label: "Ro16 - 2", poolA: 1, poolB: 5 },
+  { id: "ro16-3", label: "Ro16 - 3", poolA: 3, poolB: 4 },
+  { id: "ro16-4", label: "Ro16 - 4", poolA: 1, poolB: 4 },
+  { id: "ro16-5", label: "Ro16 - 5", poolA: 3, poolB: 3 },
+  { id: "ro16-6", label: "Ro16 - 6", poolA: 2, poolB: 4 },
+  { id: "ro16-7", label: "Ro16 - 7", poolA: 2, poolB: 4 },
   { id: "ro16-8", label: "Ro16 - 8", poolA: 3, poolB: 4 },
 ];
 
@@ -523,14 +526,75 @@ export type OfficialPairMaps = {
   playoff: Map<string, string>;
 };
 
+/** Leaguepedia Round of 16 pairing (N_MatchInTab → slot). */
+export type OfficialRo16Match = {
+  matchIndex: number;
+  teamAId: string;
+  teamBId: string;
+};
+
+/** Map Leaguepedia Ro16 schedule rows onto bracket slot keys. */
+export function assignmentsFromOfficialDraw(
+  draw: OfficialRo16Match[],
+): Ro16Assignments {
+  const next: Ro16Assignments = {};
+  for (const m of draw) {
+    if (!Number.isFinite(m.matchIndex)) continue;
+    const id = `ro16-${m.matchIndex}`;
+    if (!RO16_MATCHES.some((def) => def.id === id)) continue;
+    if (!m.teamAId || !m.teamBId || m.teamAId === m.teamBId) continue;
+    next[slotKey(id, "a")] = m.teamAId;
+    next[slotKey(id, "b")] = m.teamBId;
+  }
+  return next;
+}
+
+export function officialRo16DrawComplete(draw: OfficialRo16Match[]): boolean {
+  const assignments = assignmentsFromOfficialDraw(draw);
+  return ro16FullyAssigned(assignments);
+}
+
+function assignmentsEqual(a: Ro16Assignments, b: Ro16Assignments): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+/**
+ * Seat the official Ro16 draw. When `force` is false, only fills an empty board.
+ * Clears later-round results when seats change.
+ */
+export function applyOfficialRo16Draw(
+  state: PostSwissState,
+  draw: OfficialRo16Match[],
+  force = false,
+): PostSwissState {
+  if (!allKoDecided(state)) return state;
+  if (!officialRo16DrawComplete(draw)) return state;
+  if (!force && Object.keys(state.ro16Assignments).length > 0) return state;
+
+  const assignments = assignmentsFromOfficialDraw(draw);
+  if (assignmentsEqual(state.ro16Assignments, assignments)) return state;
+  return clearFromQf({
+    ...state,
+    ro16Assignments: assignments,
+    ro16Results: {},
+  });
+}
+
 /**
  * Fill undecided post-Swiss results from official games (pair match).
  * Does not overwrite existing picks. Stage maps must already be filtered
  * so Swiss results cannot fill KO/playoff slots.
+ * Auto-seats the Leaguepedia Ro16 draw when Knockout is decided and the
+ * bracket is still empty.
  */
 export function mergeOfficialIntoPostSwiss(
   state: PostSwissState,
   byStage: OfficialPairMaps,
+  ro16Draw: OfficialRo16Match[] = [],
 ): PostSwissState {
   let next = { ...state };
   let changed = false;
@@ -561,8 +625,10 @@ export function mergeOfficialIntoPostSwiss(
 
   fill(koMatchups(next.koPairings), "koResults", byStage.knockout);
 
-  if (allKoDecided(next) && Object.keys(next.ro16Assignments).length === 0) {
-    // Don't auto-draw Ro16 from Leaguepedia — only fill winners once drawn
+  const drawn = applyOfficialRo16Draw(next, ro16Draw, false);
+  if (drawn !== next) {
+    next = drawn;
+    changed = true;
   }
 
   fill(ro16Matchups(next.ro16Assignments), "ro16Results", byStage.playoff);
@@ -619,14 +685,22 @@ export function fillOfficialKnockout(
 
 /**
  * Force-fill Ro16 → Final from official results.
+ * Optionally reseats the Leaguepedia Ro16 draw first.
  * Clears later rounds when an earlier round's winners change.
  */
 export function fillOfficialBracket(
   state: PostSwissState,
   byPair: Map<string, string>,
+  ro16Draw: OfficialRo16Match[] = [],
 ): PostSwissState {
   let next = state;
   let any = false;
+
+  const drawn = applyOfficialRo16Draw(next, ro16Draw, true);
+  if (drawn !== next) {
+    next = drawn;
+    any = true;
+  }
 
   const ro16 = applyOfficialToResults(
     ro16Matchups(next.ro16Assignments),
@@ -681,7 +755,12 @@ export function knockoutHasOfficial(
 export function bracketHasOfficial(
   state: PostSwissState,
   byPair: Map<string, string>,
+  ro16Draw: OfficialRo16Match[] = [],
 ): boolean {
+  if (officialRo16DrawComplete(ro16Draw)) {
+    const official = assignmentsFromOfficialDraw(ro16Draw);
+    if (!assignmentsEqual(state.ro16Assignments, official)) return true;
+  }
   return (
     matchupsHaveOfficial(ro16Matchups(state.ro16Assignments), byPair) ||
     matchupsHaveOfficial(bracketMatchups(QF_MATCHES, state), byPair) ||

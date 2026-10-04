@@ -11,6 +11,7 @@ import { groupMatchupsByPool } from "@/lib/brackets";
 import {
   OFFICIAL_GAMES,
   OFFICIAL_POLL_MS,
+  OFFICIAL_RO16_DRAW,
   cloneOfficialRounds,
   higherSeedWinner,
   mergeOfficialIntoUserResults,
@@ -20,6 +21,7 @@ import {
   swissGames,
   type OfficialGame,
   type OfficialResultsFile,
+  type OfficialRo16Match,
 } from "@/lib/official";
 import {
   emptyPostSwissState,
@@ -39,6 +41,8 @@ export function SwissBoard() {
   const [post, setPost] = useState<PostSwissState | null>(null);
   const [officialGames, setOfficialGames] =
     useState<OfficialGame[]>(OFFICIAL_GAMES);
+  const [ro16Draw, setRo16Draw] =
+    useState<OfficialRo16Match[]>(OFFICIAL_RO16_DRAW);
   const [officialSyncedAt, setOfficialSyncedAt] = useState<string | null>(
     null,
   );
@@ -69,6 +73,7 @@ export function SwissBoard() {
         if (cancelled || !Array.isArray(data.games)) return;
 
         setOfficialGames(data.games);
+        if (Array.isArray(data.ro16Draw)) setRo16Draw(data.ro16Draw);
         setOfficialSyncedAt(data.fetchedAt ?? new Date().toISOString());
         setResults((prev) => {
           const base = prev ?? [];
@@ -102,15 +107,15 @@ export function SwissBoard() {
     }
   }, [results]);
 
-  // Re-apply official KO winners after pairings sync (sync can wipe post-Swiss).
+  // Re-apply official KO winners + Ro16 draw after pairings sync.
   useEffect(() => {
     if (!snapshot) return;
     setPost((prev) => {
       if (!prev) return prev;
       const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
-      return mergeOfficialPostSwiss(synced, officialGames);
+      return mergeOfficialPostSwiss(synced, officialGames, ro16Draw);
     });
-  }, [snapshot, officialGames]);
+  }, [snapshot, officialGames, ro16Draw]);
 
   const progressiveById = useMemo(() => {
     if (!snapshot) return {} as Record<string, number>;

@@ -11,12 +11,14 @@ import type { SwapDragPayload } from "@/lib/dragSwap";
 import {
   OFFICIAL_GAMES,
   OFFICIAL_POLL_MS,
+  OFFICIAL_RO16_DRAW,
   fillOfficialBracketPostSwiss,
   fillOfficialKnockoutPostSwiss,
   hasOfficialBracket,
   mergeOfficialPostSwiss,
   type OfficialGame,
   type OfficialResultsFile,
+  type OfficialRo16Match,
 } from "@/lib/official";
 import {
   allKoDecided,
@@ -43,6 +45,8 @@ export function PlayoffsBoard() {
   const [post, setPost] = useState<PostSwissState | null>(null);
   const [officialGames, setOfficialGames] =
     useState<OfficialGame[]>(OFFICIAL_GAMES);
+  const [ro16Draw, setRo16Draw] =
+    useState<OfficialRo16Match[]>(OFFICIAL_RO16_DRAW);
   const [dragging, setDragging] = useState<SwapDragPayload | null>(null);
 
   useEffect(() => {
@@ -65,6 +69,7 @@ export function PlayoffsBoard() {
         const data = (await res.json()) as OfficialResultsFile;
         if (cancelled || !Array.isArray(data.games)) return;
         setOfficialGames(data.games);
+        if (Array.isArray(data.ro16Draw)) setRo16Draw(data.ro16Draw);
       } catch (error) {
         console.warn("official results poll failed", error);
       }
@@ -86,16 +91,16 @@ export function PlayoffsBoard() {
     }
   }, [swiss]);
 
-  // Re-apply official KO/playoff winners whenever pairings or live games change.
+  // Re-apply official KO/playoff winners + Ro16 draw whenever live data changes.
   // Pairings sync can reset post-Swiss state; merge must run after that.
   useEffect(() => {
     if (!snapshot) return;
     setPost((prev) => {
       if (!prev) return prev;
       const synced = syncKoPairingsToSwiss(prev, snapshot.advanced);
-      return mergeOfficialPostSwiss(synced, officialGames);
+      return mergeOfficialPostSwiss(synced, officialGames, ro16Draw);
     });
-  }, [snapshot, officialGames]);
+  }, [snapshot, officialGames, ro16Draw]);
 
   const koReady =
     !!snapshot && knockoutSwissTeams(snapshot.advanced).length >= 3;
@@ -261,12 +266,16 @@ export function PlayoffsBoard() {
                     >
                       Randomize rest
                     </button>
-                    {hasOfficialBracket(post, officialGames) && (
+                    {hasOfficialBracket(post, officialGames, ro16Draw) && (
                       <button
                         type="button"
                         onClick={() => {
                           updatePost((prev) =>
-                            fillOfficialBracketPostSwiss(prev, officialGames),
+                            fillOfficialBracketPostSwiss(
+                              prev,
+                              officialGames,
+                              ro16Draw,
+                            ),
                           );
                         }}
                         className="rounded border border-[#2ecc71]/30 bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#2ecc71] transition-colors hover:border-[#2ecc71]/55 hover:bg-[#0f1a14] hover:text-[#3dd68c]"
