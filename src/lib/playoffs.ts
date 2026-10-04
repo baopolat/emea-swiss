@@ -349,6 +349,112 @@ export function ro16FullyAssigned(assignments: Ro16Assignments): boolean {
   );
 }
 
+/** Fill undecided ready matchups; leave existing picks untouched. */
+export function fillUndecidedMatchResults(
+  matchups: Matchup[],
+  existing: Record<string, MatchResult>,
+  pick: (match: Matchup) => string,
+): { results: Record<string, MatchResult>; changed: boolean } {
+  const results = { ...existing };
+  let changed = false;
+  for (const m of matchups) {
+    if (!m.teamA || !m.teamB) continue;
+    if (results[m.id]) continue;
+    const winnerId = pick(m);
+    if (!winnerId || (winnerId !== m.teamA && winnerId !== m.teamB)) continue;
+    results[m.id] = { winnerId };
+    changed = true;
+  }
+  return { results, changed };
+}
+
+export function roundHasUndecidedReady(
+  matchups: Matchup[],
+  results: Record<string, MatchResult>,
+): boolean {
+  return matchups.some(
+    (m) => m.teamA && m.teamB && !results[m.id],
+  );
+}
+
+/**
+ * Randomize undecided results in the earliest incomplete playoff round
+ * (Ro16 → QF → SF → Final). Keeps already-selected winners; clears later rounds.
+ */
+export function randomizeRestPlayoffResults(
+  state: PostSwissState,
+  pick: (match: Matchup) => string,
+): PostSwissState {
+  const ro16 = ro16Matchups(state.ro16Assignments);
+  {
+    const { results, changed } = fillUndecidedMatchResults(
+      ro16,
+      state.ro16Results,
+      pick,
+    );
+    if (changed) return clearFromQf({ ...state, ro16Results: results });
+  }
+
+  const qf = bracketMatchups(QF_MATCHES, state);
+  {
+    const { results, changed } = fillUndecidedMatchResults(
+      qf,
+      state.qfResults,
+      pick,
+    );
+    if (changed) return clearFromSf({ ...state, qfResults: results });
+  }
+
+  const sf = bracketMatchups(SF_MATCHES, state);
+  {
+    const { results, changed } = fillUndecidedMatchResults(
+      sf,
+      state.sfResults,
+      pick,
+    );
+    if (changed) {
+      return { ...state, sfResults: results, finalResults: {} };
+    }
+  }
+
+  const fin = bracketMatchups(FINAL_MATCHES, state);
+  {
+    const { results, changed } = fillUndecidedMatchResults(
+      fin,
+      state.finalResults,
+      pick,
+    );
+    if (changed) return { ...state, finalResults: results };
+  }
+
+  return state;
+}
+
+export function playoffHasRandomizableRest(state: PostSwissState): boolean {
+  if (
+    roundHasUndecidedReady(
+      ro16Matchups(state.ro16Assignments),
+      state.ro16Results,
+    )
+  ) {
+    return true;
+  }
+  if (
+    roundHasUndecidedReady(bracketMatchups(QF_MATCHES, state), state.qfResults)
+  ) {
+    return true;
+  }
+  if (
+    roundHasUndecidedReady(bracketMatchups(SF_MATCHES, state), state.sfResults)
+  ) {
+    return true;
+  }
+  return roundHasUndecidedReady(
+    bracketMatchups(FINAL_MATCHES, state),
+    state.finalResults,
+  );
+}
+
 export function koMatchups(pairings: KoPairing[]): Matchup[] {
   return pairings
     .filter((p) => p.inviteTeamId)

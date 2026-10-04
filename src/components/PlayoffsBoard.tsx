@@ -16,6 +16,7 @@ import {
   fillOfficialKnockoutPostSwiss,
   hasOfficialBracket,
   mergeOfficialPostSwiss,
+  randomWinner,
   type OfficialGame,
   type OfficialResultsFile,
   type OfficialRo16Match,
@@ -30,8 +31,9 @@ import {
   koWinners,
   knockoutSwissTeams,
   placePoolTeamInSlot,
+  playoffHasRandomizableRest,
   poolForRo16Slot,
-  randomizeRo16Draw,
+  randomizeRestPlayoffResults,
   swapRo16Slots,
   syncKoPairingsToSwiss,
   unseatRo16Slot,
@@ -253,17 +255,10 @@ export function PlayoffsBoard() {
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
-                      disabled={!playoffPools.sizesOk}
+                      disabled={!playoffHasRandomizableRest(post)}
                       onClick={() => {
                         updatePost((prev) =>
-                          clearFromQf({
-                            ...prev,
-                            ro16Assignments: randomizeRo16Draw(
-                              playoffPools,
-                              prev.ro16Assignments,
-                            ),
-                            ro16Results: {},
-                          }),
+                          randomizeRestPlayoffResults(prev, randomWinner),
                         );
                         setDragging(null);
                       }}
