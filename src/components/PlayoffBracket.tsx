@@ -31,12 +31,16 @@ type PlayoffBracketProps = {
   ) => void;
   onRo16Pick: (matchId: string, winnerId: string) => void;
   onRo16Clear: (matchId: string) => void;
+  onRo16ClearResults: () => void;
   onQfPick: (matchId: string, winnerId: string) => void;
   onQfClear: (matchId: string) => void;
+  onQfClearResults: () => void;
   onSfPick: (matchId: string, winnerId: string) => void;
   onSfClear: (matchId: string) => void;
+  onSfClearResults: () => void;
   onFinalPick: (matchId: string, winnerId: string) => void;
   onFinalClear: (matchId: string) => void;
+  onFinalClearResults: () => void;
 };
 
 function teamAt(
@@ -56,12 +60,16 @@ export function PlayoffBracket({
   onRo16Drop,
   onRo16Pick,
   onRo16Clear,
+  onRo16ClearResults,
   onQfPick,
   onQfClear,
+  onQfClearResults,
   onSfPick,
   onSfClear,
+  onSfClearResults,
   onFinalPick,
   onFinalClear,
+  onFinalClearResults,
 }: PlayoffBracketProps) {
   const qf = bracketMatchups(QF_MATCHES, post);
   const sf = bracketMatchups(SF_MATCHES, post);
@@ -97,10 +105,42 @@ export function PlayoffBracket({
           gridTemplateRows: "auto repeat(8, minmax(64px, 1fr))",
         }}
       >
-        <Header cell="1" label="Round of 16" />
-        <Header cell="3" label="Quarterfinals" />
-        <Header cell="5" label="Semifinals" />
-        <Header cell="7" label="Final" />
+        <Header
+          cell="1"
+          label="Round of 16"
+          onClear={
+            Object.keys(post.ro16Results).length > 0
+              ? onRo16ClearResults
+              : undefined
+          }
+        />
+        <Header
+          cell="3"
+          label="Quarterfinals"
+          onClear={
+            Object.keys(post.qfResults).length > 0
+              ? onQfClearResults
+              : undefined
+          }
+        />
+        <Header
+          cell="5"
+          label="Semifinals"
+          onClear={
+            Object.keys(post.sfResults).length > 0
+              ? onSfClearResults
+              : undefined
+          }
+        />
+        <Header
+          cell="7"
+          label="Final"
+          onClear={
+            Object.keys(post.finalResults).length > 0
+              ? onFinalClearResults
+              : undefined
+          }
+        />
         <Header cell="9" label="Champion" />
 
         {/* Ro16 matches in rows 2-9 */}
@@ -269,14 +309,33 @@ export function PlayoffBracket({
   );
 }
 
-function Header({ cell, label }: { cell: string; label: string }) {
+function Header({
+  cell,
+  label,
+  onClear,
+}: {
+  cell: string;
+  label: string;
+  onClear?: () => void;
+}) {
   return (
-    <h3
-      className="pb-3 text-center text-[10px] font-bold tracking-[0.16em] text-[#d4a84b] uppercase"
+    <div
+      className="flex flex-col items-center gap-0.5 pb-3"
       style={{ gridColumn: cell, gridRow: 1 }}
     >
-      {label}
-    </h3>
+      <h3 className="text-center text-[10px] font-bold tracking-[0.16em] text-[#d4a84b] uppercase">
+        {label}
+      </h3>
+      {onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded px-1 py-0.5 text-[9px] text-[#5c6b82] underline-offset-2 transition-colors hover:text-white hover:underline"
+        >
+          Clear
+        </button>
+      )}
+    </div>
   );
 }
 

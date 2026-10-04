@@ -34,6 +34,8 @@ import {
   playoffHasRandomizableRest,
   poolForRo16Slot,
   randomizeRestPlayoffResults,
+  randomizeRo16Draw,
+  ro16FullyAssigned,
   swapRo16Slots,
   syncKoPairingsToSwiss,
   unseatRo16Slot,
@@ -253,19 +255,42 @@ export function PlayoffsBoard() {
                 </div>
                 {playoffPools && (
                   <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      disabled={!playoffHasRandomizableRest(post)}
-                      onClick={() => {
-                        updatePost((prev) =>
-                          randomizeRestPlayoffResults(prev, randomWinner),
-                        );
-                        setDragging(null);
-                      }}
-                      className="rounded border border-[#2a3548] bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#c5cedd] transition-colors hover:border-[#3d4d66] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Randomize rest
-                    </button>
+                    {!ro16FullyAssigned(post.ro16Assignments) ? (
+                      <button
+                        type="button"
+                        disabled={!playoffPools.sizesOk}
+                        onClick={() => {
+                          updatePost((prev) =>
+                            clearFromQf({
+                              ...prev,
+                              ro16Assignments: randomizeRo16Draw(
+                                playoffPools,
+                                prev.ro16Assignments,
+                              ),
+                              ro16Results: {},
+                            }),
+                          );
+                          setDragging(null);
+                        }}
+                        className="rounded border border-[#2a3548] bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#c5cedd] transition-colors hover:border-[#3d4d66] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Fill the rest
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!playoffHasRandomizableRest(post)}
+                        onClick={() => {
+                          updatePost((prev) =>
+                            randomizeRestPlayoffResults(prev, randomWinner),
+                          );
+                          setDragging(null);
+                        }}
+                        className="rounded border border-[#2a3548] bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#c5cedd] transition-colors hover:border-[#3d4d66] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Randomize rest
+                      </button>
+                    )}
                     {hasOfficialBracket(
                       post,
                       officialGames,
@@ -299,19 +324,6 @@ export function PlayoffsBoard() {
                         className="rounded border border-[#f07178]/30 bg-[#121820] px-2.5 py-1 text-[10px] font-semibold text-[#f07178] transition-colors hover:border-[#f07178]/55 hover:bg-[#1a1216]"
                       >
                         Clear draw
-                      </button>
-                    )}
-                    {Object.keys(post.ro16Results).length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updatePost((prev) =>
-                            clearFromQf({ ...prev, ro16Results: {} }),
-                          );
-                        }}
-                        className="rounded px-2 py-1 text-[10px] text-[#5c6b82] underline-offset-2 hover:text-white hover:underline"
-                      >
-                        Clear Ro16 results
                       </button>
                     )}
                   </div>
@@ -386,6 +398,11 @@ export function PlayoffsBoard() {
                     return clearFromQf({ ...prev, ro16Results });
                   });
                 }}
+                onRo16ClearResults={() => {
+                  updatePost((prev) =>
+                    clearFromQf({ ...prev, ro16Results: {} }),
+                  );
+                }}
                 onQfPick={(matchId, winnerId) => {
                   updatePost((prev) =>
                     clearFromSf({
@@ -404,6 +421,11 @@ export function PlayoffsBoard() {
                     return clearFromSf({ ...prev, qfResults });
                   });
                 }}
+                onQfClearResults={() => {
+                  updatePost((prev) =>
+                    clearFromSf({ ...prev, qfResults: {} }),
+                  );
+                }}
                 onSfPick={(matchId, winnerId) => {
                   updatePost((prev) => ({
                     ...prev,
@@ -421,6 +443,13 @@ export function PlayoffsBoard() {
                     return { ...prev, sfResults, finalResults: {} };
                   });
                 }}
+                onSfClearResults={() => {
+                  updatePost((prev) => ({
+                    ...prev,
+                    sfResults: {},
+                    finalResults: {},
+                  }));
+                }}
                 onFinalPick={(matchId, winnerId) => {
                   updatePost((prev) => ({
                     ...prev,
@@ -436,6 +465,9 @@ export function PlayoffsBoard() {
                     delete finalResults[matchId];
                     return { ...prev, finalResults };
                   });
+                }}
+                onFinalClearResults={() => {
+                  updatePost((prev) => ({ ...prev, finalResults: {} }));
                 }}
               />
             </section>
