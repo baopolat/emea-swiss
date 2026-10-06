@@ -591,6 +591,66 @@ export function clearFromSf(state: PostSwissState): PostSwissState {
   };
 }
 
+function omitMatchResults(
+  results: Record<string, MatchResult>,
+  ids: readonly string[],
+): Record<string, MatchResult> {
+  if (ids.length === 0) return results;
+  const next = { ...results };
+  for (const id of ids) delete next[id];
+  return next;
+}
+
+function qfIdsFedByRo16(ro16MatchId: string): string[] {
+  return QF_MATCHES.filter(
+    (m) => m.fromA.matchId === ro16MatchId || m.fromB.matchId === ro16MatchId,
+  ).map((m) => m.id);
+}
+
+function sfIdsFedByQf(qfMatchIds: readonly string[]): string[] {
+  if (qfMatchIds.length === 0) return [];
+  const qfSet = new Set(qfMatchIds);
+  return SF_MATCHES.filter(
+    (m) => qfSet.has(m.fromA.matchId) || qfSet.has(m.fromB.matchId),
+  ).map((m) => m.id);
+}
+
+/** Clear only later-round picks that depend on a given Ro16 match. */
+export function invalidateAfterRo16Match(
+  state: PostSwissState,
+  ro16MatchId: string,
+): PostSwissState {
+  const qfIds = qfIdsFedByRo16(ro16MatchId);
+  const sfIds = sfIdsFedByQf(qfIds);
+  return {
+    ...state,
+    qfResults: omitMatchResults(state.qfResults, qfIds),
+    sfResults: omitMatchResults(state.sfResults, sfIds),
+    finalResults: sfIds.length > 0 ? {} : state.finalResults,
+  };
+}
+
+/** Clear only later-round picks that depend on a given QF match. */
+export function invalidateAfterQfMatch(
+  state: PostSwissState,
+  qfMatchId: string,
+): PostSwissState {
+  const sfIds = sfIdsFedByQf([qfMatchId]);
+  return {
+    ...state,
+    sfResults: omitMatchResults(state.sfResults, sfIds),
+    finalResults: sfIds.length > 0 ? {} : state.finalResults,
+  };
+}
+
+/** Clear Final when a given SF match changes. */
+export function invalidateAfterSfMatch(state: PostSwissState): PostSwissState {
+  return {
+    ...state,
+    finalResults: {},
+  };
+}
+
 /**
  * Ensure KO pairings track current Swiss 14–16.
  * Resets post-Swiss when the Swiss knockout set changes.

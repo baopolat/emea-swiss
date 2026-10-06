@@ -28,6 +28,9 @@ import {
   clearFromQf,
   clearFromRo16,
   clearFromSf,
+  invalidateAfterQfMatch,
+  invalidateAfterRo16Match,
+  invalidateAfterSfMatch,
   koWinners,
   knockoutSwissTeams,
   placePoolTeamInSlot,
@@ -381,21 +384,30 @@ export function PlayoffsBoard() {
                   setDragging(null);
                 }}
                 onRo16Pick={(matchId, winnerId) => {
-                  updatePost((prev) =>
-                    clearFromQf({
-                      ...prev,
-                      ro16Results: {
-                        ...prev.ro16Results,
-                        [matchId]: { winnerId },
+                  updatePost((prev) => {
+                    if (prev.ro16Results[matchId]?.winnerId === winnerId) {
+                      return prev;
+                    }
+                    return invalidateAfterRo16Match(
+                      {
+                        ...prev,
+                        ro16Results: {
+                          ...prev.ro16Results,
+                          [matchId]: { winnerId },
+                        },
                       },
-                    }),
-                  );
+                      matchId,
+                    );
+                  });
                 }}
                 onRo16Clear={(matchId) => {
                   updatePost((prev) => {
                     const ro16Results = { ...prev.ro16Results };
                     delete ro16Results[matchId];
-                    return clearFromQf({ ...prev, ro16Results });
+                    return invalidateAfterRo16Match(
+                      { ...prev, ro16Results },
+                      matchId,
+                    );
                   });
                 }}
                 onRo16ClearResults={() => {
@@ -404,21 +416,30 @@ export function PlayoffsBoard() {
                   );
                 }}
                 onQfPick={(matchId, winnerId) => {
-                  updatePost((prev) =>
-                    clearFromSf({
-                      ...prev,
-                      qfResults: {
-                        ...prev.qfResults,
-                        [matchId]: { winnerId },
+                  updatePost((prev) => {
+                    if (prev.qfResults[matchId]?.winnerId === winnerId) {
+                      return prev;
+                    }
+                    return invalidateAfterQfMatch(
+                      {
+                        ...prev,
+                        qfResults: {
+                          ...prev.qfResults,
+                          [matchId]: { winnerId },
+                        },
                       },
-                    }),
-                  );
+                      matchId,
+                    );
+                  });
                 }}
                 onQfClear={(matchId) => {
                   updatePost((prev) => {
                     const qfResults = { ...prev.qfResults };
                     delete qfResults[matchId];
-                    return clearFromSf({ ...prev, qfResults });
+                    return invalidateAfterQfMatch(
+                      { ...prev, qfResults },
+                      matchId,
+                    );
                   });
                 }}
                 onQfClearResults={() => {
@@ -427,20 +448,24 @@ export function PlayoffsBoard() {
                   );
                 }}
                 onSfPick={(matchId, winnerId) => {
-                  updatePost((prev) => ({
-                    ...prev,
-                    sfResults: {
-                      ...prev.sfResults,
-                      [matchId]: { winnerId },
-                    },
-                    finalResults: {},
-                  }));
+                  updatePost((prev) => {
+                    if (prev.sfResults[matchId]?.winnerId === winnerId) {
+                      return prev;
+                    }
+                    return invalidateAfterSfMatch({
+                      ...prev,
+                      sfResults: {
+                        ...prev.sfResults,
+                        [matchId]: { winnerId },
+                      },
+                    });
+                  });
                 }}
                 onSfClear={(matchId) => {
                   updatePost((prev) => {
                     const sfResults = { ...prev.sfResults };
                     delete sfResults[matchId];
-                    return { ...prev, sfResults, finalResults: {} };
+                    return invalidateAfterSfMatch({ ...prev, sfResults });
                   });
                 }}
                 onSfClearResults={() => {
